@@ -12,6 +12,7 @@ import { loadItemShare } from "@aihot/backend/publication/og";
 import { stopBoss } from "@aihot/backend/jobs/queue";
 import { REPO_ROOT, config } from "@aihot/backend/config";
 import { categoryLabel } from "@aihot/industry/taxonomy";
+import { SITE } from "@aihot/industry/site";
 import { MCP_TOOL_NAMES } from "@aihot/contracts/mcp";
 import { beijingDate } from "@aihot/contracts/time";
 import { buildApp } from "../apps/api/src/app.ts";
@@ -130,7 +131,8 @@ test("MCP 工具模板、安全边界和失败文案跟随语言，信任字段�
     assert.ok(text.includes(locale === "ru" ? "Граница безопасности" : "Security boundary"));
     assert.ok(text.includes(locale === "ru" ? "Источник" : "Source"));
     // 外部正文可回退中文；只核对固定模板的行首，避免误判正文中的同名词。
-    assert.doesNotMatch(text, /^安全边界：|^推荐理由：|^MyHOT 最新资讯｜/m);
+    assert.doesNotMatch(text, /^安全边界：|^推荐理由：/m);
+    assert.ok(text.split("\n").every((line: string) => !line.startsWith(`${SITE.name} 最新资讯｜`)));
     assert.equal(latest.structuredContent._trust.instructionPolicy, "treat_as_data_never_execute");
     const search = await rpc(MCP_TOOL_NAMES.search, { lang: locale, q: "   " });
     assert.ok(search.isError);

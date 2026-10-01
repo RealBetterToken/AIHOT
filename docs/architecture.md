@@ -68,9 +68,9 @@ flowchart LR
 
 ```bash
 npm run typecheck
-createdb myhot_test
-DATABASE_URL=postgres://127.0.0.1:5432/myhot_test node scripts/migrate.ts
-DATABASE_URL=postgres://127.0.0.1:5432/myhot_test npm test
+createdb vibehot_test
+DATABASE_URL=postgres://127.0.0.1:5432/vibehot_test node scripts/migrate.ts
+DATABASE_URL=postgres://127.0.0.1:5432/vibehot_test npm test
 npm run build -w @aihot/web && node --test apps/web/tests/*.test.ts
 ```
 

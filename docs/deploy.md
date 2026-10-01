@@ -5,8 +5,8 @@
 需要一台装了 Docker（带 Compose）的机器。云服务器建议至少 2 核、4 GB 内存，构建镜像时要用到。
 
 ```bash
-git clone https://github.com/KKKKhazix/AIHOT.git myhot
-cd myhot
+git clone https://github.com/RealBetterToken/VibeHot.git
+cd VibeHot
 node scripts/init-env.ts --llm-key <你的模型 API Key>
 docker compose up -d --build
 ```
@@ -57,7 +57,7 @@ docker compose up -d --build
 在 `.env` 里配置 `DB_BACKUP_STORE_*`（任何 S3 兼容的对象存储），每天 04:10 自动备份到那里。也可以手动导出：
 
 ```bash
-docker compose exec -T db pg_dump -U aihot aihot | gzip > myhot-$(date +%F).sql.gz
+docker compose exec -T db pg_dump -U aihot aihot | gzip > vibehot-$(date +%F).sql.gz
 ```
 
 数据都在三个 Docker 卷里：`db`（数据库）、`data`（上传的图片、图片缓存、本地备份）、`caddy`（证书）。`docker compose down` 不会删除它们；`docker compose down -v` 会。
@@ -83,13 +83,13 @@ docker compose logs -f --tail 100 api worker web
 ```bash
 npm ci
 node scripts/init-env.ts --llm-key <你的模型 API Key>
-createdb myhot
+createdb vibehot
 ```
 
 在 `.env` 里加上：
 
 ```bash
-DATABASE_URL=postgres://你的用户名@127.0.0.1:5432/myhot
+DATABASE_URL=postgres://你的用户名@127.0.0.1:5432/vibehot
 API_BASE_URL=http://127.0.0.1:3001
 ```
 

@@ -12,6 +12,7 @@ import { loadItemDetail } from "@aihot/backend/publication/detail";
 import { loadReport, reportIndexRows, reportIndex, v1Daily } from "@aihot/backend/publication/reports";
 import { hasReportProse, localizedStoryTexts, reportProse, reportSourceHash, storySources, validReportFields, validStoryFields } from "@aihot/backend/publication/localized-story-report";
 import { stopBoss, shutdownSignal } from "@aihot/backend/jobs/queue";
+import { SITE } from "@aihot/industry/site";
 
 const T = tag();
 const source = `story-report-localize-${T}`;
@@ -118,7 +119,7 @@ test("日报、周报、月报只翻读者文字；分类来自 taxonomy，引�
     sections: [{ label: "实践与教程", summary: "分节摘要", items: [{ itemId: first.articleId, title: "报道first", summary: "旧的引用摘要", sourceName: "信源", sourceUrl: "https://example.com/original" }] }],
     flashes: [{ itemId: first.articleId, title: "报道first", sourceName: "信源", sourceUrl: "https://example.com/original" }],
     metrics: { totalEvents: 1 } };
-  const periodic = { title: "MyHOT 周报 · 2098-W39", headline: "一周头条", overview: "一周概览", themes: [{ heading: "主题标题", summary: "主题综述", storyRefs: dailyContent.sections[0].items }], storyOrder: [first.articleId], metrics: { totalStories: 1 } };
+  const periodic = { title: `${SITE.name} 周报 · 2098-W39`, headline: "一周头条", overview: "一周概览", themes: [{ heading: "主题标题", summary: "主题综述", storyRefs: dailyContent.sections[0].items }], storyOrder: [first.articleId], metrics: { totalStories: 1 } };
   for (const [kind, key, content] of [["daily", dailyKey, dailyContent], ["weekly", "2098-W39", periodic], ["monthly", "2098-09", periodic]] as const) {
     await sql`INSERT INTO reports (kind,key,window_start,window_end,content,generated_at)
       VALUES (${kind},${key},'2098-09-01','2098-10-01',${sql.json(content)},now())`;
@@ -192,7 +193,7 @@ test("结构校验拒绝丢失进展、空有效文案、额外字段及模型�
   assert.equal(validStoryFields({ ...story, extra: "新增" }, story), null);
   assert.equal(validStoryFields({ ...story, digest: "凭空补充" }, story), null);
   assert.equal(hasReportProse({ title: "独立读者标题" }), true);
-  assert.equal(hasReportProse({ title: "MyHOT 周报 · 2098-W39" }), false);
+  assert.equal(hasReportProse({ title: `${SITE.name} 周报 · 2098-W39` }), false);
   const prose = reportProse(dailyContent);
   assert.equal(validReportFields({ ...prose, sections: [] }, prose), null);
   assert.equal(validReportFields({ ...prose, lead: { title: "", leadParagraph: "导语" } }, prose), null);
