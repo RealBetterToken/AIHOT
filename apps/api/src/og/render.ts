@@ -7,13 +7,15 @@ import satori from "satori";
 import sharp from "sharp";
 import { SITE } from "@aihot/industry/site";
 import { config, REPO_ROOT } from "@aihot/backend/config";
+import { DEFAULT_LOCALE, type Locale } from "@aihot/contracts/locale";
 
-export const OG_TEMPLATE_VERSION = "og-2026-09-29.1";
+export const OG_TEMPLATE_VERSION = "og-2026-09-30.2";
 const WIDTH = 1200;
 const HEIGHT = 630;
 const CACHE_DIR = path.join(config.dataDir, "ogcache");
 
 export interface OgCard {
+  locale?: Locale;
   kicker: string;
   title: string;
   subtitle?: string | null;
@@ -59,8 +61,11 @@ function clamp(text: string, max: number) {
 
 async function tree(card: OgCard): Promise<Node> {
   const accent = ACCENTS[card.accent ?? "teal"];
-  const title = clamp(card.title, 64);
-  const titleSize = [...title].length > 40 ? 50 : [...title].length > 24 ? 58 : 66;
+  const chinese = (card.locale ?? DEFAULT_LOCALE) === "zh";
+  const title = clamp(card.title, chinese ? 64 : 120);
+  const length = [...title].length / (chinese ? 1 : 1.7);
+  const titleSize = length > 55 ? 44 : length > 40 ? 50 : length > 24 ? 58 : 66;
+  const longTitle = length > (card.badge ? 28 : 40);
   return h(
     "div",
     {
@@ -81,18 +86,18 @@ async function tree(card: OgCard): Promise<Node> {
       ]),
       h("div", { display: "flex", marginTop: 56, alignItems: "center" }, [
         h("div", { width: 10, height: 10, borderRadius: 999, backgroundColor: accent, marginRight: 14 }),
-        h("div", { display: "flex", fontSize: 28, fontWeight: 700, color: accent, letterSpacing: 1 }, clamp(card.kicker, 30)),
+        h("div", { display: "flex", fontSize: 28, fontWeight: 700, color: accent, letterSpacing: 1 }, clamp(card.kicker, chinese ? 30 : 45)),
       ]),
       h("div", { display: "flex", flex: 1, marginTop: 22, gap: 40 }, [
         h("div", { display: "flex", flexDirection: "column", flex: 1 }, [
           h("div", { display: "flex", fontSize: titleSize, fontWeight: 700, lineHeight: 1.25, color: "#ffffff" }, title),
-          // Long titles take three lines; the summary then gets one line so nothing reaches the footer.
-          card.subtitle ? h("div", { display: "flex", marginTop: 22, fontSize: 28, lineHeight: 1.5, color: "#b1bec0" }, clamp(card.subtitle, [...title].length > 40 ? 26 : [...title].length > 24 ? 50 : 78)) : null,
+          // 带评分的标题列更窄；长标题只留一行摘要，防止挤到页脚。
+          card.subtitle ? h("div", { display: "flex", marginTop: 18, fontSize: 26, lineHeight: 1.5, color: "#b1bec0" }, clamp(card.subtitle, (longTitle ? 24 : length > 24 ? 50 : 78) * (chinese ? 1 : 2))) : null,
         ].filter(Boolean)),
         card.badge
           ? h("div", { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: 170, height: 170, borderRadius: 999, border: `6px solid ${accent}` }, [
               h("div", { display: "flex", fontSize: 58, fontWeight: 700, color: "#ffffff" }, card.badge.value),
-              h("div", { display: "flex", fontSize: 22, color: "#82939a" }, card.badge.label),
+              h("div", { display: "flex", justifyContent: "center", textAlign: "center", width: 145, fontSize: chinese ? 22 : 20, lineHeight: 1.25, color: "#82939a" }, card.badge.label),
             ])
           : null,
       ].filter(Boolean)),
@@ -109,7 +114,7 @@ async function tree(card: OgCard): Promise<Node> {
 export const OG_PNG = { compressionLevel: 9, palette: true, quality: 100, dither: 1, effort: 10 } as const;
 
 export function ogEtag(card: OgCard): string {
-  return createHash("sha256").update(OG_TEMPLATE_VERSION).update(SITE.name).update(SITE_HOST).update(JSON.stringify(card)).digest("hex").slice(0, 24);
+  return createHash("sha256").update(OG_TEMPLATE_VERSION).update(SITE.name).update(SITE_HOST).update(JSON.stringify({ ...card, locale: card.locale ?? DEFAULT_LOCALE })).digest("hex").slice(0, 24);
 }
 
 /** PNG bytes for a card, from the disk cache when this exact card was rendered before. */

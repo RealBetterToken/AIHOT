@@ -1,38 +1,41 @@
-import { SITE, withSubject } from "@aihot/industry/site";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, redirect, useLoaderData } from "react-router";
-import type { Route } from "./+types/story";
-import type { StoryDetail, StoryReportView } from "@aihot/contracts/site";
-import { data as routeData } from "react-router";
-import { breadcrumbLd, pageMeta, titled } from "../lib/seo";
-import { beijingDate, beijingTime, monthDayTime, relativeTime, shortSourceName } from "../lib/format";
+import { Link } from "../lib/locale-links";
+import { redirect, useLoaderData, data as routeData } from "react-router";
 import { HeatChart } from "../features/story/HeatChart";
 import { Badge, SelectedBadge } from "../components/ui/Badge";
 import { PillTabs } from "../components/ui/Tabs";
 import { Select } from "../components/ui/Controls";
 import { IconArrowLeft, IconChevronRight, IconClock, IconDoc, IconUsers } from "../components/icons";
-
+import { type Locale, apiPath, localeFromPath, localePath } from "../i18n/locale";
+import { createT, useT, useLocale } from "../i18n/index";
+import { SITE } from "@aihot/industry/site";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { Route } from "./+types/story";
+import type { StoryDetail, StoryReportView } from "@aihot/contracts/site";
+import { breadcrumbLd, pageMeta, titled } from "../lib/seo";
+import { beijingDate, beijingTime, monthDayTime, relativeTime, shortSourceName, displayDate } from "../lib/format";
 export async function loader({ params, request }: Route.LoaderArgs) {
-  const res = await fetch(`${process.env.API_BASE_URL || "http://127.0.0.1:3001"}/api/site/stories/${encodeURIComponent(params.publicId)}`, { redirect: "manual", signal: AbortSignal.any([request.signal, AbortSignal.timeout(15000)]) });
+  const res = await fetch(`${process.env.API_BASE_URL || "http://127.0.0.1:3001"}${apiPath(`/api/site/stories/${encodeURIComponent(params.publicId)}`, localeFromPath(request.url))}`, { redirect: "manual", signal: AbortSignal.any([request.signal, AbortSignal.timeout(15000)]) });
   if (res.status === 308) {
     const target = (await res.json()) as { mergedInto: string };
-    throw redirect(`/story/${target.mergedInto}`, 308);
+    throw redirect(localePath(`/story/${target.mergedInto}`, localeFromPath(request.url)), 308);
   }
   if (res.status === 404) throw routeData({ message: "not_found" }, { status: 404 });
   if (!res.ok) throw routeData({ message: "unavailable" }, { status: 503 });
   return { story: (await res.json()) as StoryDetail };
 }
 
-export function meta({ loaderData }: Route.MetaArgs) {
-  if (!loaderData) return [{ title: titled("事件不存在") }, { name: "robots", content: "noindex" }];
+export function meta({ loaderData, location }: Route.MetaArgs) {
+  const locale = localeFromPath(location.pathname);
+  const t = createT(locale);
+  if (!loaderData) return [{ title: titled(t("事件不存在")) }, { name: "robots", content: "noindex" }];
   const s = loaderData.story;
-  return pageMeta({
+  return pageMeta({ locale,
     title: s.title,
-    description: (s.digest ?? s.summary)?.slice(0, 150) ?? `${s.sourceCount} 个报道来源 ${s.reportCount} 篇报道，完整时间线与最新进展。`,
+    description: (s.digest ?? s.summary)?.slice(0, 150) ?? t("{sources} 个报道来源 {reports} 篇报道，完整时间线与最新进展。", { sources: s.sourceCount, reports: s.reportCount }),
     path: `/story/${s.publicId}`,
     image: `/og/stories/${s.publicId}.png`,
     type: "article",
-    jsonLd: breadcrumbLd([{ name: SITE.name, path: "/" }, { name: "热点榜", path: "/hot" }, { name: s.title, path: `/story/${s.publicId}` }]),
+    jsonLd: breadcrumbLd([{ name: SITE.name, path: "/" }, { name: t("热点榜"), path: "/hot" }, { name: s.title, path: `/story/${s.publicId}` }], locale),
   });
 }
 
@@ -106,13 +109,14 @@ function useActiveSection(keys: SectionKey[]): [SectionKey, (k: SectionKey) => v
   return [active, go];
 }
 
-function dayLabelOf(day: string): string {
-  const [, m, d] = day.split("-").map(Number) as [number, number, number];
-  return `${m}月${d}日`;
+function dayLabelOf(day: string, locale: Locale): string {
+  return displayDate(day, locale, { month: "numeric", day: "numeric" });
 }
 
 /** One report on the story timeline: time, source and marks, title, a summary that opens on demand. */
 function TimelineRow({ r }: { r: StoryReportView }) {
+  const t = useT();
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [clamped, setClamped] = useState(false);
   const ref = useRef<HTMLParagraphElement>(null);
@@ -123,7 +127,7 @@ function TimelineRow({ r }: { r: StoryReportView }) {
   return (
     <li className="grid gap-x-3 border-b border-line-soft py-4 last:border-b-0 lg:grid-cols-[48px_minmax(0,1fr)]">
       <time dateTime={r.publishedAt} className="mono text-[12px] leading-[20px] text-ink-4">
-        {beijingTime(r.publishedAt)}
+        {beijingTime(r.publishedAt, locale)}
       </time>
       <div className="min-w-0">
         <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 text-[12px] leading-[20px] text-ink-4 lg:mt-0">
@@ -140,7 +144,7 @@ function TimelineRow({ r }: { r: StoryReportView }) {
             </p>
             {(clamped || open) && (
               <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="mt-1 text-[12.5px] text-note transition-colors hover:text-accent">
-                {open ? "收起摘要" : "展开摘要"}
+                {open ? t("收起摘要") : t("展开摘要")}
               </button>
             )}
           </>
@@ -153,6 +157,8 @@ function TimelineRow({ r }: { r: StoryReportView }) {
 type Filter = "all" | "official" | "selected";
 
 export default function StoryPage() {
+  const t = useT();
+  const locale = useLocale();
   const { story } = useLoaderData<typeof loader>();
   const [filter, setFilter] = useState<Filter>("all");
   const [order, setOrder] = useState<"desc" | "asc">("desc");
@@ -180,11 +186,11 @@ export default function StoryPage() {
   }, [story.timeline, filter, order]);
   const newest = story.timeline.reduce<StoryReportView | null>((a, b) => (!a || Date.parse(b.publishedAt) > Date.parse(a.publishedAt) ? b : a), null);
   const overview = story.digest
-    ? { label: "AI 综述", text: story.digest, note: story.digestUpdatedAt ? `AI 根据报道生成 · ${relativeTime(story.digestUpdatedAt)}更新` : "AI 根据报道生成" }
+    ? { label: t("AI 综述"), text: story.digest, note: story.digestUpdatedAt ? t("AI 根据报道生成 · {time}更新", { time: relativeTime(story.digestUpdatedAt, Date.now(), locale) }) : t("AI 根据报道生成") }
     : story.summary
-      ? { label: "事实说明", text: story.summary, note: null }
+      ? { label: t("事实说明"), text: story.summary, note: null }
       : story.excerpt
-        ? { label: "报道摘要", text: story.excerpt.text, note: `摘自 ${story.excerpt.sourceName}` }
+        ? { label: t("报道摘要"), text: story.excerpt.text, note: t("摘自 {name}", { name: story.excerpt.sourceName }) }
         : null;
   const showOfficial = () => {
     setFilter("official");
@@ -193,33 +199,33 @@ export default function StoryPage() {
 
   return (
     <div className="mx-auto max-w-[var(--page-max-reading)] pb-10">
-      <nav aria-label="位置" className="flex items-center gap-2.5 pb-4 pt-5 text-[12px] text-ink-4 lg:pb-5 lg:pt-4">
+      <nav aria-label={t("位置")} className="flex items-center gap-2.5 pb-4 pt-5 text-[12px] text-ink-4 lg:pb-5 lg:pt-4">
         <Link to="/hot" className="inline-flex items-center gap-1.5 transition-colors hover:text-ink">
-          <IconArrowLeft size={15} /> 热点榜
+          <IconArrowLeft size={15}  /> {t("热点榜")}
         </Link>
         <span className="h-3 w-px bg-line-strong" aria-hidden="true" />
-        <span>事件详情</span>
+        <span>{t("事件详情")}</span>
       </nav>
 
       <header className="max-w-[960px]">
         <div className="flex items-center gap-2 text-[12px] text-ink-4">
-          热点事件
-          <Badge tone={status.tone}>{status.label}</Badge>
+          {t("热点事件")}
+          <Badge tone={status.tone}>{t(status.label)}</Badge>
         </div>
         <h1 className="mt-2.5 text-[27px] font-bold leading-[1.5] tracking-[-0.01em] text-ink lg:mt-3 lg:text-[36px] lg:font-[730]">{story.title}</h1>
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] text-ink-3">
           <span className="inline-flex items-center gap-1.5">
             <IconDoc size={15} className="text-ink-4" />
-            <b className="num font-semibold text-ink">{story.reportCount}</b> 篇报道
+            {t("{count} 篇报道", { count: story.reportCount })}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <IconUsers size={15} className="text-ink-4" />
-            <b className="num font-semibold text-ink">{story.sourceCount}</b> 个报道来源
+            {t("{count} 个报道来源", { count: story.sourceCount })}
           </span>
           {story.latestAt && (
             <span className="inline-flex items-center gap-1.5" suppressHydrationWarning>
               <IconClock size={15} className="text-ink-4" />
-              {relativeTime(story.latestAt)}更新
+              {t("{time}更新", { time: relativeTime(story.latestAt, Date.now(), locale) })}
             </span>
           )}
         </div>
@@ -229,13 +235,13 @@ export default function StoryPage() {
         <PillTabs
           size="sm"
           layoutId="story-sections"
-          label="事件内容导航"
+          label={t("事件内容导航")}
           active={activeSection}
           onSelect={(k) => goSection(k as SectionKey)}
           items={[
-            { key: "overview", label: "事件概览" },
-            { key: "reports", label: "报道时间线", count: story.reportCount },
-            ...(observed ? [{ key: "heat", label: "热度走势" }] : []),
+            { key: "overview", label: t("事件概览") },
+            { key: "reports", label: t("报道时间线"), count: story.reportCount },
+            ...(observed ? [{ key: "heat", label: t("热度走势") }] : []),
           ]}
         />
       </div>
@@ -243,7 +249,7 @@ export default function StoryPage() {
       <div className="mt-5 grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:mt-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
         {/* On phones the main column dissolves so the rail's cards can sit between its sections. */}
         <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-6">
-          <Panel id={SECTIONS.overview} title="先了解这件事" right={overview?.label} className="order-1">
+          <Panel id={SECTIONS.overview} title={t("先了解这件事")} right={overview?.label} className="order-1">
             {overview ? (
               <>
                 <p className="whitespace-pre-line text-[15px] leading-[1.85] text-ink-2">{overview.text}</p>
@@ -254,18 +260,18 @@ export default function StoryPage() {
                 )}
               </>
             ) : (
-              <p className="text-[13.5px] text-ink-4">还没有综述，先看下面的报道时间线。</p>
+              <p className="text-[13.5px] text-ink-4">{t("还没有综述，先看下面的报道时间线。")}</p>
             )}
             {story.latest && (
               <div className="-mx-5 mt-5 border-t border-line-soft px-5 pt-4 lg:-mx-6 lg:px-6">
                 <div className="flex items-center gap-2.5 text-[12px]">
-                  <span className="font-semibold text-ink">最新进展</span>
-                  {story.latestAt && <span className="num text-ink-4">{monthDayTime(story.latestAt)}</span>}
+                  <span className="font-semibold text-ink">{t("最新进展")}</span>
+                  {story.latestAt && <span className="num text-ink-4">{monthDayTime(story.latestAt, locale)}</span>}
                 </div>
                 {newest ? (
                   <Link to={`/items/${newest.id}`} className="group mt-1.5 inline text-[14px] leading-[1.7] text-ink-2 transition-colors hover:text-accent">
                     {story.latest}
-                    <IconChevronRight size={14} className="ml-0.5 inline -translate-y-px text-ink-4 transition-transform group-hover:translate-x-0.5" />
+                    <IconChevronRight size={14} className="ms-0.5 inline -translate-y-px text-ink-4 transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" />
                   </Link>
                 ) : (
                   <p className="mt-1.5 text-[14px] leading-[1.7] text-ink-2">{story.latest}</p>
@@ -275,13 +281,13 @@ export default function StoryPage() {
           </Panel>
 
           {story.developments.length > 1 && (
-            <Panel title="事件进展" right={`${story.developments.length} 个进展`} className="order-3">
-              <ol className="relative space-y-4 pl-5 before:absolute before:bottom-2 before:left-[3px] before:top-2 before:w-px before:bg-line">
+            <Panel title={t("事件进展")} right={t("{count} 个进展", { count: story.developments.length })} className="order-3">
+              <ol className="relative space-y-4 ps-5 before:absolute before:bottom-2 before:start-[3px] before:top-2 before:w-px before:bg-line">
                 {story.developments.map((d, i) => (
                   <li key={d.factId} className="relative">
-                    <span className={`absolute -left-5 top-[7px] size-[7px] rounded-full ring-4 ring-surface ${i === 0 ? "bg-accent" : "bg-line-strong"}`} aria-hidden="true" />
+                    <span className={`absolute -start-5 top-[7px] size-[7px] rounded-full ring-4 ring-surface ${i === 0 ? "bg-accent" : "bg-line-strong"}`} aria-hidden="true" />
                     <div className="num text-[12px] text-ink-4">
-                      {monthDayTime(d.firstReportAt)} · {d.reportCount} 篇报道
+                      {monthDayTime(d.firstReportAt, locale)} · {t("{count} 篇报道", { count: d.reportCount })}
                     </div>
                     <Link to={`/items/${d.representative.id}`} className="mt-0.5 block text-[15px] font-semibold leading-snug text-ink transition-colors hover:text-accent">
                       {d.title}
@@ -297,34 +303,34 @@ export default function StoryPage() {
 
           <Panel
             id={SECTIONS.reports}
-            title="报道时间线"
-            sub="沿着报道，了解事件的不同侧面。"
+            title={t("报道时间线")}
+            sub={t("沿着报道，了解事件的不同侧面。")}
             className="order-4"
             right={
-              <Select value={order} onChange={(e) => setOrder(e.target.value as "desc" | "asc")} aria-label="排序">
-                <option value="desc">最新在前</option>
-                <option value="asc">最早在前</option>
+              <Select value={order} onChange={(e) => setOrder(e.target.value as "desc" | "asc")} aria-label={t("排序")}>
+                <option value="desc">{t("最新在前")}</option>
+                <option value="asc">{t("最早在前")}</option>
               </Select>
             }
           >
             <PillTabs
               size="xs"
               layoutId="story-report-filter"
-              label="报道筛选"
+              label={t("报道筛选")}
               active={filter}
               onSelect={(k) => setFilter(k as Filter)}
               items={[
-                { key: "all", label: "全部报道", count: counts.all },
-                { key: "official", label: "官方一手", count: counts.official },
-                { key: "selected", label: "精选报道", count: counts.selected },
+                { key: "all", label: t("全部报道"), count: counts.all },
+                { key: "official", label: t("官方一手"), count: counts.official },
+                { key: "selected", label: t("精选报道"), count: counts.selected },
               ]}
             />
             {days.length === 0 ? (
-              <p className="py-10 text-center text-[13px] text-ink-4">这个筛选下没有报道。</p>
+              <p className="py-10 text-center text-[13px] text-ink-4">{t("这个筛选下没有报道。")}</p>
             ) : (
               days.map(({ day, rows }) => (
                 <div key={day}>
-                  <div className="pb-0.5 pt-5 text-[14px] font-semibold text-ink">{dayLabelOf(day)}</div>
+                  <div className="pb-0.5 pt-5 text-[14px] font-semibold text-ink">{dayLabelOf(day, locale)}</div>
                   <ol>
                     {rows.map((r) => (
                       <TimelineRow key={r.id} r={r} />
@@ -335,24 +341,24 @@ export default function StoryPage() {
             )}
             {story.reportCount > story.timeline.length && (
               <p className="pt-3 text-center text-[12px] text-ink-4">
-                显示最近 {story.timeline.length} 篇，共 {story.reportCount} 篇报道。
+                {t("显示最近 {shown} 篇，共 {total} 篇报道。", { shown: story.timeline.length, total: story.reportCount })}
               </p>
             )}
           </Panel>
 
           {observed && (
-            <Panel id={SECTIONS.heat} title="本事件热度走势" className="order-5">
+            <Panel id={SECTIONS.heat} title={t("本事件热度走势")} className="order-5">
               <HeatChart points={story.heat} />
             </Panel>
           )}
 
           {story.related.length > 0 && (
-            <Panel title="关联事件" className="order-6">
+            <Panel title={t("关联事件")} className="order-6">
               <ul className="-my-1 divide-y divide-line-soft">
                 {story.related.map((r) => (
                   <li key={r.publicId}>
                     <Link to={`/story/${r.publicId}`} className="group flex items-baseline gap-3 py-3">
-                      <span className="shrink-0 text-[12px] text-ink-4">{r.relation === "storyline" ? "同一故事线" : "相关事件"}</span>
+                      <span className="shrink-0 text-[12px] text-ink-4">{r.relation === "storyline" ? t("同一故事线") : t("相关事件")}</span>
                       <span className="min-w-0 flex-1 text-[14.5px] font-medium text-ink-2 transition-colors group-hover:text-accent">{r.title}</span>
                       <IconChevronRight size={14} className="shrink-0 self-center text-ink-4" />
                     </Link>
@@ -365,19 +371,18 @@ export default function StoryPage() {
 
         <aside className="order-2 flex min-w-0 flex-col gap-4 lg:order-none lg:gap-5">
           {observed && (
-            <RailCard title="为什么热">
+            <RailCard title={t("为什么热")}>
               <p className="text-[12.5px] leading-[1.75] text-ink-3">
-                过去 48 小时，已观察到 <b className="num font-semibold text-ink">{story.whyHot.participants48h}</b> 个独立主体参与讨论或报道，最近 6 小时新增{" "}
-                <b className="num font-semibold text-ink">{story.whyHot.newParticipants6h}</b> 个。
+                {t("过去 48 小时，已观察到 {participants} 个独立主体参与讨论或报道，最近 6 小时新增 {new} 个。", { participants: story.whyHot.participants48h, new: story.whyHot.newParticipants6h })}
               </p>
-              {!story.whyHot.observationComplete && <p className="mt-2 text-[12px] leading-relaxed text-ink-4">部分信源观测不完整，以上仅为已观察到的参与。</p>}
+              {!story.whyHot.observationComplete && <p className="mt-2 text-[12px] leading-relaxed text-ink-4">{t("部分信源观测不完整，以上仅为已观察到的参与。")}</p>}
               <p className="mt-2 text-[12px] text-ink-4">
-                <span className="num">{story.whyHot.recentReports24h}</span> 篇近期报道
+                {t("{count} 篇近期报道", { count: story.whyHot.recentReports24h })}
                 {story.whyHot.rank && (
                   <>
                     <span className="mx-1">·</span>
                     <Link to="/hot" className="text-accent hover:underline">
-                      热点榜第 {story.whyHot.rank} 名
+                      {t("热点榜第 {rank} 名", { rank: story.whyHot.rank })}
                     </Link>
                   </>
                 )}
@@ -385,46 +390,46 @@ export default function StoryPage() {
             </RailCard>
           )}
           {story.officialReports.length > 0 && (
-            <RailCard title="官方一手" right={`${counts.official || story.officialReports.length} 篇`}>
-              <p className="text-[12px] text-ink-4">直接了解当事方的说法</p>
+            <RailCard title={t("官方一手")} right={t("{count} 篇报道", { count: counts.official || story.officialReports.length })}>
+              <p className="text-[12px] text-ink-4">{t("直接了解当事方的说法")}</p>
               <ul className="mt-1 divide-y divide-line-soft">
                 {story.officialReports.slice(0, 5).map((r) => (
                   <li key={r.id} className="py-3">
                     <div className="truncate text-[11.5px] text-ink-4">{r.source.name}</div>
                     <Link to={`/items/${r.id}`} className="group mt-1 block text-[13.5px] font-semibold leading-[1.6] text-ink transition-colors hover:text-accent">
                       {r.title}
-                      <IconChevronRight size={13} className="ml-0.5 inline -translate-y-px text-ink-4 transition-transform group-hover:translate-x-0.5" />
+                      <IconChevronRight size={13} className="ms-0.5 inline -translate-y-px text-ink-4 transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" />
                     </Link>
                   </li>
                 ))}
               </ul>
               {counts.official > 0 && (
                 <button type="button" onClick={showOfficial} className="text-[12px] text-ink-4 transition-colors hover:text-accent">
-                  在时间线筛选全部官方报道
+                  {t("在时间线筛选全部官方报道")}
                 </button>
               )}
             </RailCard>
           )}
-          <RailCard title="事件记录" className="hidden lg:block">
+          <RailCard title={t("事件记录")} className="hidden lg:block">
             <dl className="space-y-2 text-[12.5px]">
               {story.firstReportAt && (
                 <div className="flex justify-between gap-3">
-                  <dt className="text-ink-4">最早报道</dt>
+                  <dt className="text-ink-4">{t("最早报道")}</dt>
                   <dd className="num text-ink-2">
-                    <time dateTime={story.firstReportAt}>{monthDayTime(story.firstReportAt)}</time>
+                    <time dateTime={story.firstReportAt}>{monthDayTime(story.firstReportAt, locale)}</time>
                   </dd>
                 </div>
               )}
               {story.latestAt && (
                 <div className="flex justify-between gap-3">
-                  <dt className="text-ink-4">最近更新</dt>
+                  <dt className="text-ink-4">{t("最近更新")}</dt>
                   <dd className="num text-ink-2">
-                    <time dateTime={story.latestAt}>{monthDayTime(story.latestAt)}</time>
+                    <time dateTime={story.latestAt}>{monthDayTime(story.latestAt, locale)}</time>
                   </dd>
                 </div>
               )}
             </dl>
-            <p className="mt-3 border-t border-line-soft pt-3 text-[12px] leading-relaxed text-ink-4">同一事件的报道集中在这里，新的进展会继续补充。</p>
+            <p className="mt-3 border-t border-line-soft pt-3 text-[12px] leading-relaxed text-ink-4">{t("同一事件的报道集中在这里，新的进展会继续补充。")}</p>
           </RailCard>
         </aside>
       </div>

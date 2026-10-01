@@ -49,7 +49,7 @@ async function article(): Promise<string> {
     sourceId: SOURCE, url: `https://example.com/${T}-${n}`, title: `Test ${n}`, bodyText: BODY, bodyHtml: `<p>${BODY}</p>`, bodyStatus: "ok", via: "fetch", publishedAt: new Date(),
   });
   await sql`INSERT INTO analyses (article_id, input_revision, origin, relevance, category, title_zh, summary_zh, reason_zh, score, selected)
-            VALUES (${articleId}, 1, 'rule', 'pass', 'ai-models', ${`标题${n}-${T}`}, ${`SUMMARY-${n}-${T}`}, '理由', 90, true)`;
+            VALUES (${articleId}, 1, 'rule', 'pass', 'release', ${`标题${n}-${T}`}, ${`SUMMARY-${n}-${T}`}, '理由', 90, true)`;
   return articleId;
 }
 
@@ -79,10 +79,10 @@ test("site reading sends one language while exports retain both, including after
   assert.equal(normal.bodyLanguage, 'zh');
   assert.equal(normal.hasTranslation, true);
   assert.equal(normal.body.original, null);
-  assert.ok(normal.body.zh.includes('中文完整正文'));
+  assert.ok(normal.body.localized.includes('中文完整正文'));
   assert.equal(normal.outline[0].text, '译文标题');
   assert.equal(original.bodyLanguage, 'original');
-  assert.equal(original.body.zh, null);
+  assert.equal(original.body.localized, null);
   assert.ok(original.body.original.includes('Original full body'));
   assert.equal(original.outline[0].text, 'Original heading');
   const md = (await get(`/items/${id}/markdown`)).body;
@@ -283,7 +283,7 @@ test("v1 story retains website content and fallback ordering without the website
   assert.equal(v1.latest, 'Latest development fallback');
   assert.deepEqual(v1.reports, site.timeline.slice(0, 50).map((r: any) => ({ id: r.id, title: r.title, summary: r.summary,
     source: { name: r.source.name, firstParty: r.source.firstParty }, publishedAt: r.publishedAt,
-    links: { aihot: `${config.siteUrl}/items/${r.id}`, original: r.originalUrl } })));
+    links: { aihot: `${config.siteUrl}/zh/items/${r.id}`, original: r.originalUrl } })));
   await sql`UPDATE publications SET visible_after = now() + interval '1 day' WHERE article_id = ${second}`;
   const gated = JSON.parse((await get(`/api/v1/stories/${publicId}`)).body).story;
   assert.deepEqual(gated.reports.map((r: any) => r.id), [first]);
@@ -324,7 +324,7 @@ test("share images keep detail metadata and access rules while conditional reads
   const date = beijingDate(d.timelineAt);
   const card = { kicker, title: d.title, subtitle: d.summary, meta: `${source} · ${date}`,
     badge: d.selected && d.score !== null ? { value: String(Math.round(d.score)), label: "精选评分" } : null };
-  const poster = { url: `${config.siteUrl}/items/${id}`, kicker, title: d.title, summary: d.summary, source, date, score: d.selected ? d.score : null };
+  const poster = { url: `${config.siteUrl}/zh/items/${id}`, kicker, title: d.title, summary: d.summary, source, date, score: d.selected ? d.score : null };
   const paths = [[`/og/items/${id}.png`, `"og-${ogEtag(card)}"`], [`/og/posters/${id}.png`, `"poster-${posterEtag(poster)}"`]];
   const queries: string[] = [];
   const previous = sql.options.debug;

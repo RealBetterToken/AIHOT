@@ -6,16 +6,19 @@ import { createHash, randomUUID } from "node:crypto";
 import satori from "satori";
 import sharp from "sharp";
 import { renderSVG } from "uqr";
-import { SITE } from "@aihot/industry/site";
+import { SITE, getSite } from "@aihot/industry/site";
+import { DEFAULT_LOCALE, type Locale } from "@aihot/contracts/locale";
+import { ogText } from "./copy.ts";
 import { config } from "@aihot/backend/config";
 import { fonts, h, nameMark, OG_PNG, SITE_HOST, type Node } from "./render.ts";
 
-export const POSTER_TEMPLATE_VERSION = "poster-2026-09-29.1";
+export const POSTER_TEMPLATE_VERSION = "poster-2026-09-30.1";
 const WIDTH = 1080;
 const HEIGHT = 1440;
 const CACHE_DIR = path.join(config.dataDir, "ogcache");
 
 export interface Poster {
+  locale?: Locale;
   url: string;
   kicker: string;
   title: string;
@@ -35,11 +38,13 @@ const INK = "#0e191b";
 const ACCENT = "#176b75";
 
 async function tree(p: Poster): Promise<Node> {
-  const title = clamp(p.title, 72);
-  const len = [...title].length;
+  const locale = p.locale ?? DEFAULT_LOCALE;
+  const chinese = locale === "zh";
+  const title = clamp(p.title, chinese ? 72 : 130);
+  const len = [...title].length / (chinese ? 1 : 1.7);
   const titleSize = len > 48 ? 58 : len > 30 ? 66 : 76;
   // The summary takes the room the title leaves.
-  const summary = p.summary ? clamp(p.summary, len > 48 ? 120 : len > 30 ? 150 : 180) : null;
+  const summary = p.summary ? clamp(p.summary, (len > 48 ? 120 : len > 30 ? 150 : 180) * (chinese ? 1 : 1.6)) : null;
   const qr = `data:image/svg+xml;base64,${Buffer.from(renderSVG(p.url, { border: 0, ecc: "M", blackColor: INK, whiteColor: "#ffffff" })).toString("base64")}`;
   return h(
     "div",
@@ -61,14 +66,14 @@ async function tree(p: Poster): Promise<Node> {
       ]),
       h("div", { display: "flex", alignItems: "center", marginTop: 96 }, [
         h("div", { width: 12, height: 12, borderRadius: 999, backgroundColor: ACCENT, marginRight: 16 }),
-        h("div", { display: "flex", fontSize: 30, fontWeight: 700, color: ACCENT, letterSpacing: 1 }, clamp(p.kicker, 20)),
+        h("div", { display: "flex", fontSize: 30, fontWeight: 700, color: ACCENT, letterSpacing: 1 }, clamp(p.kicker, chinese ? 20 : 35)),
         p.score !== null
-          ? h("div", { display: "flex", marginLeft: 20, padding: "4px 16px", borderRadius: 999, backgroundColor: "rgba(23,107,117,0.09)", fontSize: 26, color: "#0f5a63" }, `精选 · ${Math.round(p.score)} 分`)
+          ? h("div", { display: "flex", marginLeft: 20, padding: "4px 16px", borderRadius: 999, backgroundColor: "rgba(23,107,117,0.09)", fontSize: 26, color: "#0f5a63" }, ogText(locale, "selectedScore", { score: Math.round(p.score) }))
           : null,
       ].filter(Boolean)),
       h("div", { display: "flex", marginTop: 30, fontSize: titleSize, fontWeight: 700, lineHeight: 1.3, color: INK }, title),
       summary ? h("div", { display: "flex", marginTop: 36, fontSize: 34, lineHeight: 1.7, color: "#3a484c" }, summary) : null,
-      h("div", { display: "flex", marginTop: 36, fontSize: 28, color: "#66757a" }, clamp(`来源：${p.source}`, 34)),
+      h("div", { display: "flex", marginTop: 36, fontSize: 28, color: "#66757a" }, clamp(`${ogText(locale, "source")}：${p.source}`, chinese ? 34 : 58)),
       h("div", { display: "flex", flex: 1 }),
       h(
         "div",
@@ -76,19 +81,19 @@ async function tree(p: Poster): Promise<Node> {
         [
           h("img", { width: 200, height: 200 }, undefined, { src: qr, width: 200, height: 200 }),
           h("div", { display: "flex", flexDirection: "column", marginLeft: 44, flex: 1 }, [
-            h("div", { display: "flex", fontSize: 36, fontWeight: 700, color: INK }, "长按识别二维码"),
-            h("div", { display: "flex", marginTop: 14, fontSize: 28, lineHeight: 1.5, color: "#66757a" }, "阅读全文、中文译文与原文链接"),
+            h("div", { display: "flex", fontSize: 36, fontWeight: 700, color: INK }, ogText(locale, "scan")),
+            h("div", { display: "flex", marginTop: 14, fontSize: 28, lineHeight: 1.5, color: "#66757a" }, ogText(locale, "read")),
             h("div", { display: "flex", marginTop: 22, fontSize: 26, color: ACCENT }, SITE_HOST),
           ]),
         ],
       ),
-      h("div", { display: "flex", justifyContent: "center", marginTop: 40, fontSize: 24, color: "#98a4a7" }, `${SITE.name} · ${SITE.tagline}`),
+      h("div", { display: "flex", justifyContent: "center", marginTop: 40, fontSize: 24, color: "#98a4a7" }, `${SITE.name} · ${getSite(locale).tagline}`),
     ].filter(Boolean),
   );
 }
 
 export function posterEtag(p: Poster): string {
-  return createHash("sha256").update(POSTER_TEMPLATE_VERSION).update(SITE.name).update(SITE_HOST).update(JSON.stringify(p)).digest("hex").slice(0, 24);
+  return createHash("sha256").update(POSTER_TEMPLATE_VERSION).update(SITE.name).update(getSite(p.locale ?? DEFAULT_LOCALE).tagline).update(SITE_HOST).update(JSON.stringify({ ...p, locale: p.locale ?? DEFAULT_LOCALE })).digest("hex").slice(0, 24);
 }
 
 /** PNG bytes for a poster, from the disk cache when this exact poster was rendered before. */

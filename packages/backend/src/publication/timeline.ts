@@ -2,16 +2,20 @@
 // one card per story, per fact outside a story, or per standalone article. A card sits at its latest
 // development's first appearance, so a new development brings it back up while a representative swap
 // never moves it; the representative is the first-party pick of the story's initiating fact.
+import { DEFAULT_LOCALE, type Locale } from "@aihot/contracts/locale";
+import { localizeItemStories, localizedStoryTexts } from "./localized-story-report.ts";
+import { localizeArticles } from "./localized.ts";
 import type { GroupInfo, TimelineCard, TimelineFilters, TimelineResponse } from "@aihot/contracts/site";
 import { beijingDate } from "@aihot/contracts/time";
 import { sql } from "../db.ts";
 import { decodeCursor, encodeCursor, InvalidCursorError, queryBinding } from "../lib/cursor.ts";
 import {
-  ITEM_COLUMNS, ITEM_FROM, categoryCondition, channelCondition, selectedCondition, tagCondition, toFeedItemSummary, topicCondition,
+  ITEM_COLUMNS, itemFrom, categoryCondition, channelCondition, selectedCondition, tagCondition, toFeedItemSummary, topicCondition,
   type ItemRow,
 } from "./items.ts";
 
 export interface TimelineQuery extends TimelineFilters {
+  locale?: Locale;
   cursor?: string | null;
   limit?: number;
   topicTags?: string[] | null;
@@ -65,7 +69,7 @@ async function groupPool(q: TimelineQuery, now: Date, storyIds: number[], factId
 const groupedCache = new Map<string, { at: number; rows: Array<{ gk: string; anchor: number }> }>();
 const groupedPending = new Map<string, Promise<Array<{ gk: string; anchor: number }>>>();
 async function groupedAnchors(q: TimelineQuery, now: Date): Promise<Array<{ gk: string; anchor: number }>> {
-  const key = binding(q);
+  const key = `${binding(q)}:${q.locale ?? DEFAULT_LOCALE}`;
   const cached = q.now ? undefined : groupedCache.get(key);
   if (cached && Date.now() - cached.at < 5000) return cached.rows;
   const pending = q.now ? undefined : groupedPending.get(key);
@@ -175,11 +179,17 @@ export async function loadTimeline(q: TimelineQuery): Promise<Omit<TimelineRespo
 
   // Recheck scope when hydrating: a withdrawal may commit after the narrow representative read.
   const rows = new Map(planned.length ? (await sql<ItemRow[]>`
-    SELECT ${ITEM_COLUMNS} ${ITEM_FROM} WHERE p.article_id IN ${sql(planned.map((p) => p.id))}
+    SELECT ${ITEM_COLUMNS} ${itemFrom(q.locale)} WHERE p.article_id IN ${sql(planned.map((p) => p.id))}
       AND ${selectedCondition(now)} ${filterSql(q)}`).map((row) => [row.id, row]) : []);
+  const localized = new Map((await localizeItemStories(await localizeArticles([...rows.values()], q.locale ?? DEFAULT_LOCALE), q.locale ?? DEFAULT_LOCALE)).map((row) => [row.id, row]));
+  const storyTexts = await localizedStoryTexts([...rows.values()].flatMap((r) => r.story_public_id ? [r.story_public_id] : []), q.locale ?? DEFAULT_LOCALE);
   const cards: TimelineCard[] = planned.flatMap(({ id, key, anchorAt, group }) => {
-    const row = rows.get(id);
+    const row = localized.get(id);
     if (!row) return [];
+    if (group?.latestDevelopment && row.story_public_id) {
+      const development = storyTexts.get(row.story_public_id)?.developments.find((f) => f.public_id === group.latestDevelopment!.factId);
+      if (development) group.latestDevelopment.title = development.title;
+    }
     if (group) group.story = row.story_public_id ? { publicId: row.story_public_id, title: row.story_title ?? "" } : null;
     return [{ key, anchorAt, item: toFeedItemSummary(row), group }];
   });

@@ -1,5 +1,7 @@
 // Public read layer, item level. Every exit (site API, v1, RSS, MCP, sitemap) reads
 // items through these functions; visibility, release gate and body licences are applied here.
+import { DEFAULT_LOCALE, type Locale } from "@aihot/contracts/locale";
+import { sourceLanguageSql } from "../content/language.ts";
 import type { CategoryKey, ChannelKey } from "@aihot/contracts/taxonomy";
 import type { FeedItemSummary, ItemSummary, MediaView, SourceKind, XPostView } from "@aihot/contracts/site";
 import { sql, type Db } from "../db.ts";
@@ -46,7 +48,7 @@ export interface ItemRow {
   story_public_id: string | null;
   story_title: string | null;
   zh_text: string | null;
-  /** Chinese translation of the post an X post quotes. */
+  /** 按请求语言及英文回退选择的引用帖译文，字段名保留以兼容内部投影。 */
   quoted_zh: string | null;
 }
 
@@ -67,14 +69,37 @@ export const API_ITEM_COLUMNS = sql`
   p.published_at, p.discovered_at, p.category, p.score, p.selected, p.reason`;
 export const API_ITEM_FROM = sql`FROM publications p JOIN sources s ON s.id = p.source_id`;
 
-/** A translation of an older revision is left out: the original changed after it (the worker translates it again). */
-export const ITEM_FROM = sql`
-  FROM publications p
-  JOIN sources s ON s.id = p.source_id
-  JOIN articles a ON a.id = p.article_id
-  LEFT JOIN stories st ON st.id = p.story_id AND st.merged_into IS NULL
-  LEFT JOIN translations tr ON tr.article_id = p.article_id AND tr.lang = 'zh' AND tr.revision >= a.revision
-  LEFT JOIN quote_translations qt ON p.channel = 'x' AND qt.tweet_id = substring(a.x_post->'quoted'->>'url' from '/status/([0-9]+)')`;
+/** 请求语言优先，缺失时英文回退；原文已是请求语言时直接使用原文。 */
+export function bodyTranslationJoins(locale: Locale = DEFAULT_LOCALE, completeOnly = false) {
+  const quoted = sql`coalesce(a.x_post->'quoted'->>'text', '')`;
+  const quoteLanguage = sourceLanguageSql(sql`NULL::text`, quoted);
+  return sql`
+    LEFT JOIN LATERAL (
+      SELECT t.* FROM translations t WHERE t.article_id = p.article_id AND t.revision >= a.revision
+        AND t.lang IN (${locale}, 'en') AND ${sourceLanguageSql()} <> ${locale}
+        AND coalesce(t.body_text, '') <> '' ${completeOnly ? sql`AND t.complete` : sql``}
+      ORDER BY (t.lang = ${locale}) DESC LIMIT 1
+    ) tr ON true
+    LEFT JOIN LATERAL (
+      SELECT text AS text_zh FROM (
+        SELECT q.lang, q.text, q.text_hash, 0 AS priority FROM quote_translations_lang q
+        WHERE q.tweet_id = substring(a.x_post->'quoted'->>'url' from '/status/([0-9]+)') AND q.lang IN (${locale}, 'en')
+        UNION ALL
+        SELECT 'zh', q.text_zh, q.text_hash, 1 FROM quote_translations q
+        WHERE q.tweet_id = substring(a.x_post->'quoted'->>'url' from '/status/([0-9]+)') AND ${locale} = 'zh'
+      ) q WHERE ${quoteLanguage} <> ${locale}
+        AND q.text_hash = encode(sha256(convert_to(${quoted}, 'UTF8')), 'hex')
+      ORDER BY (q.lang = ${locale}) DESC, priority LIMIT 1
+    ) qt ON p.channel = 'x'`;
+}
+
+export function itemFrom(locale: Locale = DEFAULT_LOCALE) {
+  return sql`FROM publications p
+    JOIN sources s ON s.id = p.source_id
+    JOIN articles a ON a.id = p.article_id
+    LEFT JOIN stories st ON st.id = p.story_id AND st.merged_into IS NULL
+    ${bodyTranslationJoins(locale)}`;
+}
 
 /** Listed items: public, and a selected item only after its release gate. */
 export function listedCondition(now: Date) {
@@ -196,8 +221,8 @@ export function toFeedItemSummary(row: ItemRow): FeedItemSummary {
   };
 }
 
-export async function fetchItemsByIds(ids: string[], db: Db = sql): Promise<Map<string, ItemRow>> {
+export async function fetchItemsByIds(ids: string[], db: Db = sql, locale: Locale = DEFAULT_LOCALE): Promise<Map<string, ItemRow>> {
   if (ids.length === 0) return new Map();
-  const rows = await db<ItemRow[]>`SELECT ${ITEM_COLUMNS} ${ITEM_FROM} WHERE p.article_id IN ${db(ids)}`;
+  const rows = await db<ItemRow[]>`SELECT ${ITEM_COLUMNS} ${itemFrom(locale)} WHERE p.article_id IN ${db(ids)}`;
   return new Map(rows.map((r) => [r.id, r]));
 }

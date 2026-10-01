@@ -1,7 +1,8 @@
 // Page metadata from one place: title template, canonical address, OG images, robots. The site's name
 // and wording come from the industry pack (industry/site.ts); its address from SITE_URL.
 import type { MetaDescriptor } from "react-router";
-import { SITE } from "@aihot/industry/site";
+import { SITE, getSite } from "@aihot/industry/site";
+import { LOCALES, HTML_LANG, localePath, localeFromPath, type Locale } from "../i18n/locale";
 
 /**
  * The site's address: SITE_URL while rendering on the server (what crawlers and share previews read),
@@ -16,6 +17,7 @@ export const HOME_TITLE = SITE.homeTitle;
 export const SITE_DESCRIPTION = SITE.description;
 
 export interface PageMetaInput {
+  locale?: Locale;
   title?: string | null;
   /** Use `title` verbatim as the document title (no " · <site>" suffix). */
   rawTitle?: boolean;
@@ -47,25 +49,31 @@ export function titled(title: string): string {
 
 export function pageMeta(input: PageMetaInput): MetaDescriptor[] {
   const base = siteUrl();
-  const title = input.title ? (input.rawTitle ? input.title : titled(input.title)) : HOME_TITLE;
-  const description = input.description ?? SITE_DESCRIPTION;
-  const url = `${base}${input.path}`;
-  const image = input.image ? (input.image.startsWith("http") ? input.image : `${base}${input.image}`) : `${base}/og/site.png`;
+  const locale = input.locale ?? localeFromPath(input.path);
+  const site = getSite(locale);
+  const title = input.title ? (input.rawTitle ? input.title : titled(input.title)) : site.homeTitle;
+  const description = input.description ?? site.description;
+  const url = `${base}${localePath(input.path, locale)}`;
+  const imageUrl = input.image ? (input.image.startsWith("http") ? input.image : `${base}${input.image}`) : `${base}/og/site.png`;
+  const image = input.image?.startsWith("http") ? imageUrl : `${imageUrl}${imageUrl.includes("?") ? "&" : "?"}lang=${locale}`;
   const tags: MetaDescriptor[] = [
     { title },
     { name: "description", content: description },
     { tagName: "link", rel: "canonical", href: url },
     { property: "og:site_name", content: SITE.name },
     { property: "og:type", content: input.type ?? "website" },
-    { property: "og:title", content: input.title ?? HOME_TITLE },
+    ...LOCALES.map((lang) => ({ tagName: "link" as const, rel: "alternate", hrefLang: HTML_LANG[lang], href: `${base}${localePath(input.path, lang)}` })),
+    { tagName: "link", rel: "alternate", hrefLang: "x-default", href: `${base}${localePath(input.path, "en")}` },
+    { property: "og:title", content: input.title ?? site.homeTitle },
     { property: "og:description", content: description },
     { property: "og:url", content: url },
     { property: "og:image", content: image },
     { property: "og:image:width", content: "1200" },
     { property: "og:image:height", content: "630" },
-    { property: "og:locale", content: SITE.locale.replace("-", "_") },
+    { property: "og:locale", content: { zh: "zh_CN", ru: "ru_RU", en: "en_US" }[locale] },
+    ...LOCALES.filter((lang) => lang !== locale).map((lang) => ({ property: "og:locale:alternate", content: { zh: "zh_CN", ru: "ru_RU", en: "en_US" }[lang] })),
     { name: "twitter:card", content: "summary_large_image" },
-    { name: "twitter:title", content: input.title ?? HOME_TITLE },
+    { name: "twitter:title", content: input.title ?? site.homeTitle },
     { name: "twitter:description", content: description },
     { name: "twitter:image", content: image },
   ];
@@ -74,24 +82,24 @@ export function pageMeta(input: PageMetaInput): MetaDescriptor[] {
   return tags;
 }
 
-export function organizationLd() {
+export function organizationLd(locale: Locale = "zh") {
   const base = siteUrl();
   const founder = SITE.organization.founder;
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: SITE.organization.name,
-    url: base,
+    url: `${base}${localePath("/", locale)}`,
     logo: `${base}/icon.png`,
     ...(founder ? { founder: { "@type": "Person", name: founder.name, ...(founder.description ? { description: founder.description } : {}), ...(founder.url ? { sameAs: [founder.url] } : {}) } } : {}),
   };
 }
 
-export function breadcrumbLd(items: Array<{ name: string; path: string }>) {
+export function breadcrumbLd(items: Array<{ name: string; path: string }>, locale: Locale = "zh") {
   const base = siteUrl();
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    itemListElement: items.map((it, i) => ({ "@type": "ListItem", position: i + 1, name: it.name, item: `${base}${it.path}` })),
+    itemListElement: items.map((it, i) => ({ "@type": "ListItem", position: i + 1, name: it.name, item: `${base}${localePath(it.path, locale)}` })),
   };
 }

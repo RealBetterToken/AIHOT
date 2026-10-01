@@ -1,6 +1,7 @@
 // Server-side HTTP client for route loaders. The web process never touches the database;
 // SSR reads the api over loopback with keep-alive, one or two requests per page.
 import { data, redirect } from "react-router";
+import { apiPath, localeFromPath, localePath, type Locale } from "../i18n/locale.ts";
 
 const API_BASE = process.env.API_BASE_URL || "http://127.0.0.1:3001";
 
@@ -16,10 +17,12 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiGet<T>(path: string, init?: { signal?: AbortSignal; headers?: Record<string, string>; responseHeaders?: Headers }): Promise<T> {
+export async function apiGet<T>(path: string, init?: { signal?: AbortSignal; request?: Request; locale?: Locale; headers?: Record<string, string>; responseHeaders?: Headers }): Promise<T> {
+  if (path.startsWith("/api/site/")) path = apiPath(path, init?.locale ?? localeFromPath(init?.request?.url ?? "/zh"));
+  const signal = init?.signal ?? init?.request?.signal;
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { accept: "application/json", "x-aihot-ssr": "1", ...init?.headers },
-    signal: init?.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(15_000)]) : AbortSignal.timeout(15_000),
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15_000)]) : AbortSignal.timeout(15_000),
   });
   if (!res.ok) {
     let code: string | null = null;
@@ -36,14 +39,14 @@ export async function apiGet<T>(path: string, init?: { signal?: AbortSignal; hea
 }
 
 /** Maps API failures to route responses: real 404s, search-busy page, otherwise 503. */
-export async function loadOr404<T>(path: string, opts: { busyRedirect?: string; responseHeaders?: Headers; signal?: AbortSignal } = {}): Promise<T> {
+export async function loadOr404<T>(path: string, opts: { busyRedirect?: string; responseHeaders?: Headers; signal?: AbortSignal; request?: Request; locale?: Locale } = {}): Promise<T> {
   try {
-    return await apiGet<T>(path, { responseHeaders: opts.responseHeaders, signal: opts.signal });
+    return await apiGet<T>(path, { responseHeaders: opts.responseHeaders, signal: opts.signal, request: opts.request, locale: opts.locale });
   } catch (error) {
-    if (opts.signal?.aborted) throw error;
+    if ((opts.signal ?? opts.request?.signal)?.aborted) throw error;
     if (error instanceof ApiError) {
       if (error.status === 404) throw data({ message: "not_found" }, { status: 404 });
-      if (error.status === 503 && opts.busyRedirect) throw redirect(opts.busyRedirect);
+      if (error.status === 503 && opts.busyRedirect) throw redirect(localePath(opts.busyRedirect, opts.locale ?? localeFromPath(opts.request?.url ?? "/zh")));
       if (error.status === 400) throw data({ message: "bad_request" }, { status: 400 });
     }
     throw data({ message: "unavailable" }, { status: 503 });

@@ -1,15 +1,18 @@
-// A page of reports grouped by Beijing day with the same rail and rows as the home timeline
-// (全部动态, topics, search results, 收藏).
-import { useMemo } from "react";
-import { Link } from "react-router";
-import type { FeedItemSummary } from "@aihot/contracts/site";
+import { Link } from "../../lib/locale-links";
+
 import { IconChevronRight } from "../../components/icons";
-import { beijingDate } from "../../lib/format";
-import { markRead, useReadSet } from "../../lib/local-state";
 import { DayHeader, TimelineSlot } from "./Timeline";
 import { FeedItem } from "./FeedItem";
+import { useT, useLocale } from "../../i18n/index";
+import { useMemo } from "react";
+import type { FeedItemSummary } from "@aihot/contracts/site";
+import { beijingDate, formatNumber, displayDate } from "../../lib/format";
+import { markRead, useReadSet } from "../../lib/local-state";
+// A page of reports grouped by Beijing day with the same rail and rows as the home timeline
+// (全部动态, topics, search results, 收藏).
 
 export function DayList({ items, todayCount = null, showTags = true, animate = false }: { items: FeedItemSummary[]; todayCount?: number | null; showTags?: boolean; animate?: boolean }) {
+  const locale = useLocale();
   const readSet = useReadSet();
   const today = beijingDate(Date.now());
   const days = useMemo(() => {
@@ -26,7 +29,7 @@ export function DayList({ items, todayCount = null, showTags = true, animate = f
   return (
     <div>
       {days.map(({ day, items: list }) => (
-        <section key={day} aria-label={day}>
+        <section key={day} aria-label={displayDate(day, locale, { month: "long", day: "numeric" })}>
           <DayHeader day={day} today={today} count={day === today ? todayCount : null} />
           <ol className="lg:pt-1">
             {list.map((it) => (
@@ -43,14 +46,16 @@ export function DayList({ items, todayCount = null, showTags = true, animate = f
 
 /** Numbered pages (the list stays crawlable), with previous / next at the ends. */
 export function Pagination({ page, pageCount, href }: { page: number; pageCount: number; href: (p: number) => string }) {
+  const t = useT();
+  const locale = useLocale();
   if (pageCount <= 1) return null;
   const pages = [...new Set([1, pageCount, page - 2, page - 1, page, page + 1, page + 2].filter((p) => p >= 1 && p <= pageCount))].sort((a, b) => a - b);
   const btn = "inline-flex h-9 min-w-9 items-center justify-center rounded-full px-2.5 text-[13px] transition-colors";
   return (
-    <nav aria-label="分页" className="mt-6 flex flex-wrap items-center justify-center gap-1">
+    <nav aria-label={t("分页")} className="mt-6 flex flex-wrap items-center justify-center gap-1">
       {page > 1 && (
         <Link to={href(page - 1)} className={`${btn} border border-line-strong bg-surface px-3 text-ink-3 hover:border-ink-4 hover:text-ink`}>
-          上一页
+          {t("上一页")}
         </Link>
       )}
       {pages.map((p, i) => (
@@ -61,13 +66,13 @@ export function Pagination({ page, pageCount, href }: { page: number; pageCount:
             aria-current={p === page ? "page" : undefined}
             className={`num ${btn} ${p === page ? "bg-ink font-semibold text-bg" : "text-ink-3 hover:bg-bg-sunk hover:text-ink"}`}
           >
-            {p}
+            {formatNumber(p, locale)}
           </Link>
         </span>
       ))}
       {page < pageCount && (
         <Link to={href(page + 1)} className={`${btn} gap-0.5 border border-line-strong bg-surface px-3 text-ink-3 hover:border-ink-4 hover:text-ink`}>
-          下一页 <IconChevronRight size={14} />
+          {t("下一页")} <IconChevronRight size={14}  />
         </Link>
       )}
     </nav>

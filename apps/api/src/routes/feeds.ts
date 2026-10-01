@@ -1,8 +1,8 @@
-// RSS routes. Unknown query parameters are accepted and never change content.
+// RSS routes. Language selects card copy; other query parameters are ignored.
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { RSS_CACHE_CONTROL } from "@aihot/contracts/http-policy";
 import { dailyFeed, isFeedCategory, itemFeed, type ItemFeedKind } from "@aihot/backend/publication/feeds";
-import { applyPublicHeaders, sendTextWithEtag } from "../http/respond.ts";
+import { applyPublicHeaders, localeParam, looseQuery, QueryError, sendProblem, sendTextWithEtag } from "../http/respond.ts";
 
 async function sendFeed(req: FastifyRequest, reply: FastifyReply, xml: string) {
   applyPublicHeaders(reply, { cors: false });
@@ -20,8 +20,9 @@ export function registerFeeds(app: FastifyInstance) {
   }
   const item = (kind: ItemFeedKind) => async (req: FastifyRequest, reply: FastifyReply) => {
     try {
-      return await sendFeed(req, reply, await itemFeed(kind, null));
+      return await sendFeed(req, reply, await itemFeed(kind, null, new Date(), localeParam(looseQuery(req).lang)));
     } catch (error) {
+      if (error instanceof QueryError) return sendProblem(req, reply, { status: 400, code: "invalid_request", detail: error.message });
       req.log.error({ err: error }, "feed error");
       return feedError(reply);
     }
@@ -31,8 +32,9 @@ export function registerFeeds(app: FastifyInstance) {
   app.get("/feed/all.xml", item("all"));
   app.get("/feed/daily.xml", async (req, reply) => {
     try {
-      return await sendFeed(req, reply, await dailyFeed());
+      return await sendFeed(req, reply, await dailyFeed(localeParam(looseQuery(req).lang)));
     } catch (error) {
+      if (error instanceof QueryError) return sendProblem(req, reply, { status: 400, code: "invalid_request", detail: error.message });
       req.log.error({ err: error }, "feed error");
       return feedError(reply);
     }
@@ -43,8 +45,9 @@ export function registerFeeds(app: FastifyInstance) {
       const slug = file.replace(/\.xml$/, "");
       if (!file.endsWith(".xml") || !isFeedCategory(slug)) return reply.code(404).type("text/plain; charset=utf-8").send("Not found");
       try {
-        return await sendFeed(req, reply, await itemFeed(full ? "selected-full" : "selected", slug));
+        return await sendFeed(req, reply, await itemFeed(full ? "selected-full" : "selected", slug, new Date(), localeParam(looseQuery(req).lang)));
       } catch (error) {
+        if (error instanceof QueryError) return sendProblem(req, reply, { status: 400, code: "invalid_request", detail: error.message });
         req.log.error({ err: error }, "feed error");
         return feedError(reply);
       }

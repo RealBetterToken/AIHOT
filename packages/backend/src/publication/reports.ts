@@ -1,10 +1,12 @@
 // Reports through the public read layer: website DTOs and the v1 shapes. Only real reports are
 // listed; a missing date is a 404, never another day. Withdrawn citations are marked, not shown.
+import { DEFAULT_LOCALE, type Locale } from "@aihot/contracts/locale";
+import { localizeReportRows, reportProse } from "./localized-story-report.ts";
 import type { ReportCitation, ReportDetail, ReportIndexEntry, ReportNavigationEntry, ReportKind } from "@aihot/contracts/site";
 import { sql } from "../db.ts";
 import { cached, type Cached } from "../lib/cache.ts";
 import { proxiedImage, proxiedImageSet } from "../media/imgproxy.ts";
-import { dailyUrl, itemUrl, siteUrl } from "./links.ts";
+import { pageUrl, siteUrl } from "./links.ts";
 import { SITE, withSubject } from "@aihot/industry/site";
 
 export type { ReportKind };
@@ -60,17 +62,18 @@ export async function unavailableIds(ids: string[]): Promise<Set<string>> {
 }
 
 /** Directory/feed metadata only: citation summaries and full report prose stay in the detail read. */
-export async function reportIndexRows(kind: ReportKind, limit: number) {
-  return sql<{ key: string; content: Record<string, any>; generated_at: Date }[]>`
-    SELECT key, generated_at, jsonb_build_object(
-      'lead', content->'lead', 'headline', content->'headline', 'title', content->'title',
-      CASE WHEN kind = 'daily' THEN 'sections' ELSE 'themes' END,
-      jsonb_build_array(jsonb_build_object(CASE WHEN kind = 'daily' THEN 'items' ELSE 'storyRefs' END,
-        (SELECT coalesce(jsonb_agg(jsonb_build_object('itemId', item->'itemId', 'title', item->'title') ORDER BY ord), '[]'::jsonb)
-         FROM jsonb_array_elements(jsonb_path_query_array(content,
-           CASE WHEN kind = 'daily' THEN '$.sections[*].items[*]'::jsonpath ELSE '$.themes[*].storyRefs[*]'::jsonpath END
-         )) WITH ORDINALITY AS cited(item, ord))))) AS content
-    FROM reports WHERE kind = ${kind} ORDER BY key DESC LIMIT ${limit}`;
+export async function reportIndexRows(kind: ReportKind, limit: number, locale: Locale = DEFAULT_LOCALE) {
+  const rows = await sql<{ kind: ReportKind; key: string; content: Record<string, any>; generated_at: Date }[]>`
+    SELECT kind, key, content, generated_at FROM reports WHERE kind = ${kind} ORDER BY key DESC LIMIT ${limit}`;
+  const localized = await localizeReportRows(rows, locale);
+  // 完整源结构用于哈希与翻译校验；目录缓存仍只保留标题所需的精简字段。
+  return localized.map((r) => ({ key: r.key, generated_at: r.generated_at, content: {
+    lead: r.content.lead, headline: r.content.headline, title: r.content.title,
+    [kind === "daily" ? "sections" : "themes"]: [{ [kind === "daily" ? "items" : "storyRefs"]:
+      (kind === "daily" ? (r.content.sections ?? []).flatMap((s: any) => s.items ?? []) : (r.content.themes ?? []).flatMap((t: any) => t.storyRefs ?? []))
+        .map((i: any) => ({ itemId: i.itemId, title: i.title })),
+    }],
+  } }));
 }
 
 /**
@@ -88,7 +91,7 @@ export function reportHeadline(content: Record<string, any>, kind: "daily" | "pe
 /** A weekly or monthly's own headline; the composer's "<site> 周报 · 2026-W38" names the issue, not its news. */
 function periodicHeadline(content: Record<string, any>): string | null {
   const text = String(content.headline ?? content.title ?? "");
-  return text && !/^.+ [周月]报 · \d{4}-/.test(text) ? text : null;
+  return text && !/^.+(?:[周月]报|weekly (?:briefing|report)|monthly (?:briefing|report)|Еженедельный обзор|Ежемесячный обзор) · \d{4}-/i.test(text) ? text : null;
 }
 
 /** Check only the first possible headline of each report; advance reports whose candidate was withdrawn. */
@@ -195,10 +198,10 @@ async function neighbors(kind: ReportKind, key: string): Promise<{ prev: string 
   return { prev: row?.prev ?? null, next: row?.next ?? null };
 }
 
-export async function loadReport(kind: ReportKind, key: string): Promise<ReportDetail | null> {
+export async function loadReport(kind: ReportKind, key: string, locale: Locale = DEFAULT_LOCALE): Promise<ReportDetail | null> {
   const [r] = await sql<ReportRow[]>`SELECT kind, key, window_start, window_end, content, generated_at, revision FROM reports WHERE kind = ${kind} AND key = ${key}`;
   if (!r) return null;
-  const c = r.content;
+  const c = (await localizeReportRows([r], locale))[0]!.content;
   const rawItems: Array<Record<string, any>> = [
     ...(c.sections ?? []).flatMap((s: any) => s.items ?? []),
     ...(c.flashes ?? []),
@@ -208,7 +211,7 @@ export async function loadReport(kind: ReportKind, key: string): Promise<ReportD
   const cite = (raw: Record<string, any>) => citationFrom(raw, avail);
 
   const sections = kind === "daily"
-    ? (c.sections ?? []).map((s: any) => ({ label: String(s.label), summary: null, items: (s.items ?? []).map(cite) }))
+    ? (c.sections ?? []).map((s: any) => ({ label: String(s.label), summary: s.summary ?? null, items: (s.items ?? []).map(cite) }))
     : (c.themes ?? []).map((t: any) => ({ label: String(t.heading), summary: t.summary ?? null, items: (t.storyRefs ?? []).map(cite) }));
   const labelled: Array<ReportCitation & { label: string }> = sections.flatMap((s: { label: string; items: ReportCitation[] }) => s.items.map((i) => ({ ...i, label: s.label })));
   // Weekly and monthly reports carry the editor's reading order across themes.
@@ -228,7 +231,9 @@ export async function loadReport(kind: ReportKind, key: string): Promise<ReportD
   const [{ prev, next }, picture] = await Promise.all([neighbors(kind, key), leadItem?.itemId && leadItem.available ? leadCover(leadItem.itemId) : null]);
   const cover = picture && leadItem ? { ...picture, caption: kind === "daily" ? null : leadItem.title } : null;
   const headline = kind === "daily" ? null : periodicHeadline(c);
-  const title = kind === "daily" ? `${withSubject("日报")} · ${key}` : String(c.title ?? (kind === "weekly" ? `${SITE.name} 周报 · ${key}` : `${SITE.name} 月报 · ${key}`));
+  const title = locale === "zh"
+    ? (kind === "daily" ? `${withSubject("日报")} · ${key}` : String(c.title ?? `${SITE.name} ${kind === "weekly" ? "周报" : "月报"} · ${key}`))
+    : (kind !== "daily" && reportProse(r.content).title ? String(c.title) : `${SITE.name} ${locale === "ru" ? ({ daily: "Ежедневный обзор", weekly: "Еженедельный обзор", monthly: "Ежемесячный обзор" }[kind]) : ({ daily: "Daily briefing", weekly: "Weekly briefing", monthly: "Monthly briefing" }[kind])} · ${key}`);
   return {
     kind,
     key,
@@ -257,21 +262,22 @@ export async function loadReport(kind: ReportKind, key: string): Promise<ReportD
  * withdrawal shows within a minute, like the pages' own caches).
  */
 const INDEX_LIMIT = 400;
-const indexes = new Map<ReportKind, Cached<{ rows: Awaited<ReturnType<typeof reportIndexRows>>; gone: Set<string> }>>();
-export function reportIndex(kind: ReportKind) {
-  let entry = indexes.get(kind);
+const indexes = new Map<string, Cached<{ rows: Awaited<ReturnType<typeof reportIndexRows>>; gone: Set<string> }>>();
+export function reportIndex(kind: ReportKind, locale: Locale = DEFAULT_LOCALE) {
+  const cacheKey = `${kind}:${locale}`;
+  let entry = indexes.get(cacheKey);
   if (!entry) {
     entry = cached(async () => {
-      const rows = await reportIndexRows(kind, INDEX_LIMIT);
+      const rows = await reportIndexRows(kind, INDEX_LIMIT, locale);
       return { rows, gone: await unavailableHeadlineIds(rows, kind === "daily" ? "daily" : "periodic") };
     }, { freshMs: 60_000, maxStaleMs: 10 * 60_000 });
-    indexes.set(kind, entry);
+    indexes.set(cacheKey, entry);
   }
   return entry.get();
 }
 
-export async function listReports(kind: ReportKind, limit = INDEX_LIMIT): Promise<ReportIndexEntry[]> {
-  const index = await reportIndex(kind);
+export async function listReports(kind: ReportKind, limit = INDEX_LIMIT, locale: Locale = DEFAULT_LOCALE): Promise<ReportIndexEntry[]> {
+  const index = await reportIndex(kind, locale);
   const rows = index.rows.slice(0, limit);
   const shape = kind === "daily" ? "daily" : "periodic";
   const gone = index.gone;
@@ -292,12 +298,12 @@ export async function listReports(kind: ReportKind, limit = INDEX_LIMIT): Promis
 
 const attribution = (url: string) => ({ name: SITE.name, url });
 
-export async function v1Dailies(limit: number) {
-  const index = await reportIndex("daily");
+export async function v1Dailies(limit: number, locale: Locale = DEFAULT_LOCALE) {
+  const index = await reportIndex("daily", locale);
   const rows = index.rows.slice(0, limit);
   const gone = index.gone;
   const items = rows.map((r) => {
-    const url = dailyUrl(r.key);
+    const url = pageUrl(`/daily/${r.key}`, locale);
     return {
       date: r.key,
       generatedAt: r.generated_at.toISOString(),
@@ -310,17 +316,17 @@ export async function v1Dailies(limit: number) {
   return { schemaVersion: 1 as const, count: items.length, items };
 }
 
-export async function v1Daily(date: string | "latest") {
+export async function v1Daily(date: string | "latest", locale: Locale = DEFAULT_LOCALE) {
   const [r] = date === "latest"
     ? await sql<ReportRow[]>`SELECT kind, key, window_start, window_end, content, generated_at, revision FROM reports WHERE kind = 'daily' ORDER BY key DESC LIMIT 1`
     : await sql<ReportRow[]>`SELECT kind, key, window_start, window_end, content, generated_at, revision FROM reports WHERE kind = 'daily' AND key = ${date}`;
   if (!r) return null;
-  const c = r.content;
+  const c = (await localizeReportRows([r], locale))[0]!.content;
   const raw = [...(c.sections ?? []).flatMap((s: any) => s.items ?? []), ...(c.flashes ?? [])];
   const avail = await availability([...new Set(raw.map((i: any) => i.itemId).filter(Boolean))] as string[]);
   const ok = (i: any) => !i.itemId || (avail.get(i.itemId)?.available ?? true);
-  const links = (i: any) => ({ aihot: i.itemId ? itemUrl(i.itemId) : null, original: String(i.sourceUrl ?? "") });
-  const url = dailyUrl(r.key);
+  const links = (i: any) => ({ aihot: i.itemId ? pageUrl(`/items/${i.itemId}`, locale) : null, original: String(i.sourceUrl ?? "") });
+  const url = pageUrl(`/daily/${r.key}`, locale);
   return {
     schemaVersion: 1 as const,
     report: {
@@ -338,7 +344,7 @@ export async function v1Daily(date: string | "latest") {
           summary: String(i.summary ?? ""),
           source: { name: String(i.sourceName ?? "") },
           links: links(i),
-          attribution: attribution(i.itemId ? itemUrl(i.itemId) : url),
+          attribution: attribution(i.itemId ? pageUrl(`/items/${i.itemId}`, locale) : url),
         })),
       })),
       flashes: (c.flashes ?? []).filter(ok).map((i: any) => ({
@@ -346,7 +352,7 @@ export async function v1Daily(date: string | "latest") {
         source: { name: String(i.sourceName ?? "") },
         links: links(i),
         publishedAt: new Date(i.publishedAt ?? r.generated_at).toISOString(),
-        attribution: attribution(i.itemId ? itemUrl(i.itemId) : url),
+        attribution: attribution(i.itemId ? pageUrl(`/items/${i.itemId}`, locale) : url),
       })),
     },
   };
@@ -361,10 +367,10 @@ export function reportNavigation(kind: ReportKind, index: ReportIndexEntry[], ke
   }));
 }
 
-export async function loadReportNavigation(kind: ReportKind, key: string) {
-  return reportNavigation(kind, await listReports(kind), key);
+export async function loadReportNavigation(kind: ReportKind, key: string, locale: Locale = DEFAULT_LOCALE) {
+  return reportNavigation(kind, await listReports(kind, INDEX_LIMIT, locale), key);
 }
 
-export async function loadReportMonth(kind: ReportKind, month: string) {
-  return (await listReports(kind)).filter((e) => e.key.startsWith(month)).map(({ key, title }) => ({ key, title }));
+export async function loadReportMonth(kind: ReportKind, month: string, locale: Locale = DEFAULT_LOCALE) {
+  return (await listReports(kind, INDEX_LIMIT, locale)).filter((e) => e.key.startsWith(month)).map(({ key, title }) => ({ key, title }));
 }

@@ -1,3 +1,4 @@
+import { LocaleAnchor } from "../../lib/locale-links";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Presence } from "./Presence";
 
@@ -34,7 +35,7 @@ export function Menu({ trigger, label, children, align = "right" }: { trigger: R
       <Presence show={open} enter="anim-drop-in" exit="anim-drop-out" duration={140}>
         <div
           role="menu"
-          className={`absolute top-10 z-50 min-w-[168px] overflow-hidden rounded-tile border border-line bg-raised py-1 shadow-[var(--shadow-pop)] ${align === "right" ? "right-0 origin-top-right" : "left-0 origin-top-left"}`}
+          className={`absolute top-10 z-50 min-w-[168px] overflow-hidden rounded-tile border border-line bg-raised py-1 shadow-[var(--shadow-pop)] ${align === "right" ? "end-0 origin-top-right rtl:origin-top-left" : "start-0 origin-top-left rtl:origin-top-right"}`}
         >
           {children(() => setOpen(false))}
         </div>
@@ -45,7 +46,7 @@ export function Menu({ trigger, label, children, align = "right" }: { trigger: R
 
 /** One entry of a Menu (a button or a link). */
 export function MenuItem({ icon, children, onSelect, href, download }: { icon?: ReactNode; children: ReactNode; onSelect?: () => void; href?: string; download?: boolean }) {
-  const cls = "flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] text-ink-2 transition-colors hover:bg-bg-sunk hover:text-ink";
+  const cls = "flex w-full items-center gap-2.5 px-3 py-2 text-start text-[13px] text-ink-2 transition-colors hover:bg-bg-sunk hover:text-ink";
   const inner = (
     <>
       {icon && <span className="text-ink-4">{icon}</span>}
@@ -54,9 +55,9 @@ export function MenuItem({ icon, children, onSelect, href, download }: { icon?: 
   );
   if (href) {
     return (
-      <a role="menuitem" href={href} download={download} onClick={onSelect} className={cls}>
+      <LocaleAnchor role="menuitem" href={href} download={download} onClick={onSelect} className={cls}>
         {inner}
-      </a>
+      </LocaleAnchor>
     );
   }
   return (

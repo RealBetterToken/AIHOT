@@ -1,5 +1,8 @@
+import { Link, LocaleAnchor } from "../../lib/locale-links";
+import { useT, useLocale, createT, translateKnown } from "../../i18n/index.ts";
+import { localeFromPath, localePath, apiPath } from "../../i18n/locale.ts";
 import type { ReactNode } from "react";
-import { Link } from "react-router";
+
 import type { CopyDocument, RenderedCopy } from "../../lib/markdown";
 import { ArticleLayout, RailSection } from "../../components/ui/Page";
 
@@ -8,13 +11,16 @@ import { ArticleLayout, RailSection } from "../../components/ui/Page";
  * left rail and its outline in the right (phones get the facts above the text and no outline).
  */
 export function CopyPage({ doc, rendered, eyebrow, footer, aside }: { doc: CopyDocument; rendered: RenderedCopy; eyebrow?: ReactNode; footer?: ReactNode; aside?: ReactNode }) {
+  const t = useT();
+  const locale = useLocale();
   const facts = (["版本", "生效日期", "运营主体", "备案号"] as const).filter((k) => doc.meta[k]);
+  const html = rendered.html.replace(/href="(\/[^"]*)"/g, (_link, path: string) => `href="${localePath(path, locale)}"`);
   const info = facts.length > 0 && (
-    <RailSection title="文档信息">
+    <RailSection title={t("文档信息")}>
       <dl className="space-y-2 text-[12.5px]">
         {facts.map((k) => (
           <div key={k}>
-            <dt className="text-ink-4">{k}</dt>
+            <dt className="text-ink-4">{translateKnown(locale, k)}</dt>
             <dd className="mt-0.5 text-ink-2">{doc.meta[k]}</dd>
           </div>
         ))}
@@ -22,14 +28,14 @@ export function CopyPage({ doc, rendered, eyebrow, footer, aside }: { doc: CopyD
     </RailSection>
   );
   const outline = rendered.outline.length > 2 && (
-    <RailSection title="目录">
-      <nav aria-label="目录">
-        <ol className="-ml-px space-y-0.5 border-l border-line">
+    <RailSection title={t("目录")}>
+      <nav aria-label={t("目录")}>
+        <ol className="-ms-px space-y-0.5 border-s border-line">
           {rendered.outline.map((o) => (
             <li key={o.id}>
-              <a href={`#${o.id}`} className="-ml-px block border-l border-transparent py-1 pl-3 text-[12.5px] leading-snug text-ink-3 transition-colors hover:border-accent hover:text-ink">
+              <LocaleAnchor href={`#${o.id}`} className="-ms-px block border-s border-transparent py-1 ps-3 text-[12.5px] leading-snug text-ink-3 transition-colors hover:border-accent hover:text-ink">
                 {o.text}
-              </a>
+              </LocaleAnchor>
             </li>
           ))}
         </ol>
@@ -59,13 +65,13 @@ export function CopyPage({ doc, rendered, eyebrow, footer, aside }: { doc: CopyD
           <dl className="mt-5 grid grid-cols-1 border-y border-line text-[12.5px] sm:grid-cols-2 lg:hidden">
             {facts.map((k) => (
               <div key={k} className="flex gap-4 border-b border-line-soft py-2.5 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0">
-                <dt className="w-16 shrink-0 text-ink-4">{k}</dt>
+                <dt className="w-16 shrink-0 text-ink-4">{translateKnown(locale, k)}</dt>
                 <dd className="min-w-0 text-ink-2">{doc.meta[k]}</dd>
               </div>
             ))}
           </dl>
         )}
-        <div className="prose prose-compact mt-6 lg:mt-8" dangerouslySetInnerHTML={{ __html: rendered.html }} />
+        <div className="prose prose-compact mt-6 lg:mt-8" dangerouslySetInnerHTML={{ __html: html }} />
         {footer && <div className="mt-12 border-t border-line pt-5 text-[12.5px] text-ink-3">{footer}</div>}
       </article>
     </ArticleLayout>
@@ -73,6 +79,8 @@ export function CopyPage({ doc, rendered, eyebrow, footer, aside }: { doc: CopyD
 }
 
 export function LegalFooterLinks({ links, note }: { links: Array<{ to: string; label: string; id?: string }>; note?: string }) {
+  const t = useT();
+  const locale = useLocale();
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
       {links.map((l) => (

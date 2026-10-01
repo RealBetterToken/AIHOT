@@ -1,3 +1,4 @@
+import type { Locale } from "./locale.ts";
 // First-party site API (/api/site/*). Not a public API: it may evolve with the website,
 // but it is served from the same public read layer as v1, RSS and MCP.
 import type { CategoryKey, ChannelKey } from "./taxonomy.ts";
@@ -32,7 +33,7 @@ export interface XPostView {
   avatarSrcSet?: string;
   text: string;
   translation: string | null;
-  /** translation: Chinese translation of the quoted post, when it is in another language. */
+  /** 按请求语言及英文回退选择的引用帖译文。 */
   quoted: { authorName: string; handle: string; text: string; url: string; translation: string | null } | null;
   media: MediaView[];
 }
@@ -141,8 +142,8 @@ export interface ItemDetail extends ItemSummary {
   readingMode: "full" | "summary-only";
   author: string | null;
   language: string | null;
-  /** Chinese body (translation or Chinese original) and original body, whitelisted HTML. */
-  body: { zh: string | null; original: string | null; zhKind: "translation" | "original" | null; complete: boolean } | null;
+  /** 请求语言的正文译文与原文，均为已清理的 HTML。 */
+  body: { localized: string | null; original: string | null; localizedLanguage: Locale | null; complete: boolean } | null;
   outline: OutlineEntry[];
   relatedStories: StoryRef[];
   indexable: boolean;
@@ -376,7 +377,7 @@ export interface SiteStats {
 export interface SiteItemDetail extends Omit<ItemDetail, "x"> {
   x: Omit<XPostView, "text" | "translation"> | null;
   hasTranslation: boolean;
-  bodyLanguage: "zh" | "original";
+  bodyLanguage: Locale | "original";
 }
 
 export interface StoryFollowup {

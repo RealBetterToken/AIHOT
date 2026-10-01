@@ -1,8 +1,13 @@
+import { Link } from "../../lib/locale-links";
+import { useLocale } from "../../i18n/index";
+import { localePath } from "../../i18n/locale";
 import { useEffect, useRef, useState } from "react";
-import { Link, type LinkProps } from "react-router";
+import { type LinkProps } from "react-router";
 
 /** Hover, keyboard focus and a stationary touch prefetch; scrolling over a card does not. */
 export function IntentLink({ onFocus, onBlur, onMouseEnter, onMouseLeave, onTouchStart, onTouchMove, onTouchEnd, onTouchCancel, ...props }: Omit<LinkProps, "prefetch">) {
+  const locale = useLocale();
+  const to = typeof props.to === "string" ? localePath(props.to, locale) : { ...props.to, ...(props.to.pathname ? { pathname: localePath(props.to.pathname, locale) } : {}) };
   const [ready, setReady] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clear = () => {
@@ -15,7 +20,7 @@ export function IntentLink({ onFocus, onBlur, onMouseEnter, onMouseLeave, onTouc
   };
   const cancel = () => { clear(); setReady(false); };
   useEffect(() => { cancel(); return clear; }, [props.to]);
-  return <Link {...props} prefetch={ready ? "render" : "none"}
+  return <Link {...props} to={to} prefetch={ready ? "render" : "none"}
     onFocus={(e) => { onFocus?.(e); if (!e.defaultPrevented) start(); }}
     onBlur={(e) => { onBlur?.(e); cancel(); }}
     onMouseEnter={(e) => { onMouseEnter?.(e); if (!e.defaultPrevented) start(); }}

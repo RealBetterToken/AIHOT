@@ -1,3 +1,7 @@
+import { RTL_LOCALES } from "@aihot/contracts/locale";
+import { formatNumber } from "../../lib/format";
+import { useT, useLocale } from "../../i18n/index";
+
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Presence } from "./Presence";
@@ -14,6 +18,8 @@ export interface LightboxImage {
  * between pictures; closing puts focus back where it was.
  */
 export function Lightbox({ images, index, onIndex, onClose }: { images: LightboxImage[]; index: number | null; onIndex: (i: number) => void; onClose: () => void }) {
+  const t = useT();
+  const locale = useLocale();
   const open = index !== null && !!images[index];
   const dialog = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
@@ -33,8 +39,8 @@ export function Lightbox({ images, index, onIndex, onClose }: { images: Lightbox
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") state.current.onClose();
-      else if (e.key === "ArrowRight") step(1);
-      else if (e.key === "ArrowLeft") step(-1);
+      else if (e.key === "ArrowRight") step(RTL_LOCALES.includes(locale) ? -1 : 1);
+      else if (e.key === "ArrowLeft") step(RTL_LOCALES.includes(locale) ? 1 : -1);
       else if (e.key === "Tab") {
         const focusable = [...(dialog.current?.querySelectorAll<HTMLElement>("button") ?? [])];
         if (!focusable.length) return;
@@ -50,7 +56,7 @@ export function Lightbox({ images, index, onIndex, onClose }: { images: Lightbox
       root.style.overflow = overflow;
       opener?.focus({ preventScroll: true });
     };
-  }, [open]);
+  }, [open, locale]);
 
   const current = open ? images[index!]! : null;
   const many = images.length > 1;
@@ -62,26 +68,26 @@ export function Lightbox({ images, index, onIndex, onClose }: { images: Lightbox
         ref={dialog}
         role="dialog"
         aria-modal="true"
-        aria-label={many && index !== null ? `图片 ${index + 1} / ${images.length}` : "图片"}
+        aria-label={many && index !== null ? t("图片 {value} / {value2}", { value: index + 1, value2: images.length }) : t("图片")}
         onClick={onClose}
         className="fixed inset-0 z-[80] grid cursor-zoom-out place-items-center bg-black/85 p-4 sm:p-10"
       >
         {current && (
           <img key={current.src} src={current.src} decoding="async" alt={current.alt ?? ""} className="lightbox-img anim-zoom-in min-h-0 min-w-0 max-h-[calc(100dvh-5rem)] max-w-full rounded-control object-contain shadow-2xl" />
         )}
-        <button ref={closeButton} type="button" aria-label="关闭" onClick={onClose} className="absolute right-4 top-4 grid size-9 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20">
+        <button ref={closeButton} type="button" aria-label={t("关闭")} onClick={onClose} className="absolute end-4 top-4 grid size-9 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20">
           <IconClose size={18} />
         </button>
         {many && index !== null && (
           <>
-            <button type="button" aria-label="上一张" onClick={(e) => { e.stopPropagation(); onIndex((index - 1 + images.length) % images.length); }} className={`${nav} left-3 sm:left-5`}>
+            <button type="button" aria-label={t("上一张")} onClick={(e) => { e.stopPropagation(); onIndex((index - 1 + images.length) % images.length); }} className={`${nav} start-3 sm:start-5`}>
               <IconArrowLeft size={18} />
             </button>
-            <button type="button" aria-label="下一张" onClick={(e) => { e.stopPropagation(); onIndex((index + 1) % images.length); }} className={`${nav} right-3 sm:right-5`}>
+            <button type="button" aria-label={t("下一张")} onClick={(e) => { e.stopPropagation(); onIndex((index + 1) % images.length); }} className={`${nav} end-3 sm:end-5`}>
               <IconArrowRight size={18} />
             </button>
-            <span className="num pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/40 px-2.5 py-0.5 text-[12px] text-white/85">
-              {index + 1} / {images.length}
+            <span className="num pointer-events-none absolute bottom-4 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 rounded-full bg-black/40 px-2.5 py-0.5 text-[12px] text-white/85">
+              {formatNumber(index + 1, locale)} / {formatNumber(images.length, locale)}
             </span>
           </>
         )}

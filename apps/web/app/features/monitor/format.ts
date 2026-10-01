@@ -1,48 +1,48 @@
-// Beijing-time wording for the reset monitor. Inputs are ISO strings with +08:00.
+// 监控保留北京时间，显示格式随当前语言变化。
 import { addDays } from "@aihot/contracts/time";
+import { createT } from "../../i18n/index";
+import type { Locale } from "../../i18n/locale";
 
-export function bjDate(iso: string): string {
-  return iso.slice(0, 10);
+export function bjDate(iso: string): string { return iso.slice(0, 10); }
+export function bjTime(iso: string, locale: Locale = "zh"): string {
+  const time = iso.slice(11, 16);
+  if (locale === "zh") return time;
+  const number = new Intl.NumberFormat(locale, { minimumIntegerDigits: 2, useGrouping: false });
+  return time.split(":").map((part) => number.format(Number(part))).join(":");
 }
 
-export function bjTime(iso: string): string {
-  return iso.slice(11, 16);
+export function monthDay(date: string, locale: Locale = "zh"): string {
+  return new Intl.DateTimeFormat(locale, { month: "long", day: "numeric", timeZone: "Asia/Shanghai", calendar: "gregory" }).format(new Date(`${date}T00:00:00+08:00`));
 }
 
-export function monthDay(date: string): string {
-  return `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日`;
+export function dayWord(date: string, today: string, locale: Locale = "zh"): string {
+  const t = createT(locale);
+  if (date === today) return t("今天");
+  if (date === addDays(today, 1)) return t("明天");
+  if (date === addDays(today, -1)) return t("昨天");
+  return monthDay(date, locale);
 }
 
-/** 今天 / 明天 / 昨天 / 9月12日 */
-export function dayWord(date: string, today: string): string {
-  if (date === today) return "今天";
-  if (date === addDays(today, 1)) return "明天";
-  if (date === addDays(today, -1)) return "昨天";
-  return monthDay(date);
-}
-
-export function windowText(from: string | null, through: string | null, today: string): string {
+export function windowText(from: string | null, through: string | null, today: string, locale: Locale = "zh"): string {
   if (!from) return "";
-  const a = `${dayWord(bjDate(from), today)} ${bjTime(from)}`;
+  const a = `${dayWord(bjDate(from), today, locale)} ${bjTime(from, locale)}`;
   if (!through || through === from) return a;
-  const sameDay = bjDate(from) === bjDate(through);
-  return sameDay ? `${a}–${bjTime(through)}` : `${a}–${dayWord(bjDate(through), today)} ${bjTime(through)}`;
+  return bjDate(from) === bjDate(through) ? `${a}–${bjTime(through, locale)}` : `${a}–${dayWord(bjDate(through), today, locale)} ${bjTime(through, locale)}`;
 }
 
-export function durationText(ms: number): string {
+export function durationText(ms: number, locale: Locale = "zh"): string {
+  const t = createT(locale);
   const minutes = Math.max(1, Math.round(ms / 60_000));
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (!h) return `${m} 分钟`;
-  return m ? `${h} 小时 ${m} 分` : `${h} 小时`;
+  const h = Math.floor(minutes / 60), m = minutes % 60;
+  if (!h) return t("{count} 分钟", { count: m });
+  return m ? t("{hours} 小时 {minutes} 分", { hours: h, minutes: m }) : t("{count} 小时", { count: h });
 }
 
-/** "9/26 21:40" */
-export function stamp(iso: string | null | undefined): string {
+export function stamp(iso: string | null | undefined, locale: Locale = "zh"): string {
   if (!iso) return "—";
-  return `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))} ${bjTime(iso)}`;
+  return new Intl.DateTimeFormat(locale, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Shanghai", calendar: "gregory", hourCycle: "h23" }).format(new Date(iso));
 }
 
-export function typeName(type: "direct_reset" | "reset_credit"): string {
-  return type === "reset_credit" ? "重置卡发放" : "Codex 额度重置";
+export function typeName(type: "direct_reset" | "reset_credit", locale: Locale = "zh"): string {
+  return createT(locale)(type === "reset_credit" ? "重置卡发放" : "Codex 额度重置");
 }

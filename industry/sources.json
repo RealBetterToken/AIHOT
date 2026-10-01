@@ -1,141 +1,888 @@
 {
-  "$comment": "示范信源：首次启动时导入（scripts/seed.ts），已存在的不会被覆盖。之后在后台“信源”里增删改。字段说明见 docs/customize.md。",
+  "$comment": "示范信源：首次启动时导入（scripts/seed.ts），已存在的不会被覆盖。之后在后台“信源”里增删改。字段说明见 docs/customize.md。 信源默认在站内展示全文，全文 RSS 默认带正文；个别来源不允许转载时，在后台关闭 site_fulltext / syndicate_fulltext。",
   "sources": [
     {
-      "id": "rss-openai-news",
-      "name": "OpenAI News",
+      "id": "rss-aihero-skills",
+      "name": "AI Hero · Skills Updates",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://openai.com/news/rss.xml",
+        "feedUrl": "https://www.aihero.dev/skills/rss.xml",
         "_aihot": {
           "initialBackfillLimit": 8
-        }
+        },
+        "fetchPublicContent": true
       },
       "tier": "T1",
       "first_party": true,
-      "owner_entity_id": "openai",
+      "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 120,
       "tags": [
         "官方"
       ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
+      "site_fulltext": true,
+      "syndicate_fulltext": true
     },
     {
-      "id": "rss-google-deepmind",
-      "name": "Google DeepMind",
+      "id": "rss-anomalyco-opencode-releases",
+      "name": "OpenCode · Releases",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://deepmind.google/blog/rss.xml",
+        "feedUrl": "https://github.com/anomalyco/opencode/releases.atom",
         "_aihot": {
           "initialBackfillLimit": 8
-        }
+        },
+        "fetchPublicContent": true
       },
       "tier": "T1",
       "first_party": true,
-      "owner_entity_id": "google",
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-google-research",
-      "name": "Google Research",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://research.google/blog/rss/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": "google",
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方",
-        "研究"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-hugging-face",
-      "name": "Hugging Face Blog",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://huggingface.co/blog/feed.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": "hugging-face",
-      "participation_mode": "editorial",
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
       "interval_minutes": 120,
       "tags": [
         "官方",
         "开源"
       ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
+      "site_fulltext": true,
+      "syndicate_fulltext": true
     },
     {
-      "id": "rss-microsoft-research",
-      "name": "Microsoft Research",
+      "id": "rss-anthropics-claude-code-releases",
+      "name": "Claude Code · Releases",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://www.microsoft.com/en-us/research/feed/",
+        "feedUrl": "https://github.com/anthropics/claude-code/releases.atom",
         "_aihot": {
           "initialBackfillLimit": 8
-        }
+        },
+        "fetchPublicContent": true
       },
       "tier": "T1",
       "first_party": true,
-      "owner_entity_id": "microsoft",
-      "participation_mode": "editorial",
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
       "interval_minutes": 120,
       "tags": [
         "官方",
-        "研究"
+        "开源"
       ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
+      "site_fulltext": true,
+      "syndicate_fulltext": true
     },
     {
-      "id": "rss-nvidia-blog",
-      "name": "NVIDIA Blog",
+      "id": "rss-claude-platform-notes",
+      "name": "Claude Platform · Release Notes",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://blogs.nvidia.com/feed/",
+        "feedUrl": "https://platform.claude.com/docs/en/release-notes/feed.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-cline-blog",
+      "name": "Cline · Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://cline.ghost.io/rss/",
         "_aihot": {
           "initialBackfillLimit": 8
         }
       },
       "tier": "T1",
       "first_party": true,
-      "owner_entity_id": "nvidia",
+      "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 120,
       "tags": [
         "官方"
       ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
+      "site_fulltext": true,
+      "syndicate_fulltext": true
     },
     {
-      "id": "rss-aws-ml",
-      "name": "AWS Machine Learning Blog",
+      "id": "rss-github-copilot-changelog",
+      "name": "GitHub Copilot · Changelog",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://aws.amazon.com/blogs/machine-learning/feed/",
+        "feedUrl": "https://github.blog/changelog/label/copilot/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-google-gemini-gemini-cli-releases",
+      "name": "Gemini CLI · Releases",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://github.com/google-gemini/gemini-cli/releases.atom",
+        "ingestNoiseFilter": {
+          "dropMarkersTitleOnly": [
+            "alpha",
+            "beta",
+            "nightly",
+            "preview",
+            "-rc",
+            "pre-release"
+          ]
+        },
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "开源"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-kiro-changelog",
+      "name": "Kiro · Changelog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://kiro.dev/changelog/feed.rss",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-moonshotai-kimi-cli-releases",
+      "name": "Kimi CLI · Releases",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://github.com/MoonshotAI/kimi-cli/releases.atom",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "开源"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-openai-codex-releases",
+      "name": "Codex CLI · Releases",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://github.com/openai/codex/releases.atom",
+        "ingestNoiseFilter": {
+          "dropMarkersTitleOnly": [
+            "alpha",
+            "beta",
+            "nightly",
+            "preview",
+            "-rc",
+            "pre-release"
+          ]
+        },
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "开源"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-qwenlm-qwen-code-releases",
+      "name": "Qwen Code · Releases",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://github.com/QwenLM/qwen-code/releases.atom",
+        "ingestNoiseFilter": {
+          "dropMarkersTitleOnly": [
+            "alpha",
+            "beta",
+            "nightly",
+            "preview",
+            "-rc",
+            "pre-release"
+          ]
+        },
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "开源"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-augment-blog",
+      "name": "Augment Code · Blog",
+      "kind": "web_list",
+      "config": {
+        "url": "https://www.augmentcode.com/blog",
+        "itemSelector": "main a[href^=\"/blog/\"]:has(h2, h3)",
+        "titleSelector": "h2, h3",
+        "publishedAtRegex": "([A-Z][a-z]{2} \\d{1,2}, 20\\d{2})",
+        "allowUrlPrefixes": [
+          "https://www.augmentcode.com/blog/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-cursor-changelog",
+      "name": "Cursor · Changelog",
+      "kind": "web_list",
+      "config": {
+        "url": "https://cursor.com/changelog",
+        "itemSelector": "main article",
+        "linkSelector": "h1 a[href]",
+        "titleSelector": "h1",
+        "publishedAtSelector": "time[datetime]",
+        "allowUrlPrefixes": [
+          "https://cursor.com/changelog/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-deepseek-news",
+      "name": "DeepSeek · Research & News",
+      "kind": "web_list",
+      "config": {
+        "url": "https://www.deepseek.com/en/news/",
+        "itemSelector": "a.ds-news-hero-card, a.ds-news-list-item",
+        "titleSelector": "h2, h3",
+        "publishedAtSelector": "p.ds-text-caption span.text-ds-description",
+        "allowUrlPrefixes": [
+          "https://www.deepseek.com/en/news/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-kimi-code-whats-new",
+      "name": "Kimi Code · What's New",
+      "kind": "web_list",
+      "config": {
+        "url": "https://www.kimi.com/code/docs/en/kimi-code/whats-new.html",
+        "itemSelector": ".wn-entry",
+        "linkSelector": "h2 a.header-anchor[href]",
+        "titleSelector": "h2 span.ignore-header",
+        "publishedAtSelector": ".wn-date",
+        "preserveUrlFragment": true,
+        "allowUrlPrefixes": [
+          "https://www.kimi.com/code/docs/en/kimi-code/whats-new.html"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-lovable-blog",
+      "name": "Lovable · Blog",
+      "kind": "web_list",
+      "config": {
+        "url": "https://lovable.dev/blog",
+        "itemSelector": "main a[href^=\"/blog/\"]:has(time[datetime]):has(h2)",
+        "titleSelector": "h2",
+        "publishedAtSelector": "time[datetime]",
+        "allowUrlPrefixes": [
+          "https://lovable.dev/blog/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-openai-codex-cookbook",
+      "name": "OpenAI · Codex Cookbook",
+      "kind": "web_list",
+      "config": {
+        "url": "https://developers.openai.com/cookbook/topic/codex",
+        "itemSelector": "main a[href^=\"/cookbook/examples/codex/\"]",
+        "titleSelector": "div.flex-1",
+        "publishedAtSelector": "span.text-gray-500",
+        "allowUrlPrefixes": [
+          "https://developers.openai.com/cookbook/examples/codex/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-qwen-code-weekly",
+      "name": "Qwen Code · Weekly Updates",
+      "kind": "web_list",
+      "config": {
+        "url": "https://qwenlm.github.io/qwen-code-docs/en/blog/updates/",
+        "itemSelector": "main a[href*=\"/blog/updates/weekly-update-\"]",
+        "titleSelector": "h2",
+        "publishedAtSelector": "span.text-xs.text-muted-foreground",
+        "allowUrlPrefixes": [
+          "https://qwenlm.github.io/qwen-code-docs/en/blog/updates/weekly-update-"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "hot_signal",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-terminal-bench-news",
+      "name": "Terminal-Bench · News",
+      "kind": "web_list",
+      "config": {
+        "url": "https://www.tbench.ai/news",
+        "itemSelector": "article",
+        "linkSelector": "a[href]",
+        "titleSelector": "h2",
+        "publishedAtSelector": "time",
+        "allowUrlPrefixes": [
+          "https://www.tbench.ai/news/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-vercel-v0-blog",
+      "name": "Vercel · v0 Blog",
+      "kind": "web_list",
+      "config": {
+        "url": "https://vercel.com/blog/category/v0",
+        "itemSelector": "main a[href^=\"/blog/\"]:has(time[datetime]):has(h2)",
+        "titleSelector": "h2",
+        "publishedAtSelector": "time[datetime]",
+        "allowUrlPrefixes": [
+          "https://vercel.com/blog/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-addy-osmani",
+      "name": "Addy Osmani · Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://addyosmani.com/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-geoffrey-huntley",
+      "name": "Geoffrey Huntley · Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://ghuntley.com/rss/",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-devagentstack",
+      "name": "DevAgentStack · Field Notes",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://devagentstack.com/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-hn-agent-skills",
+      "name": "Hacker News · Agent Skills",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=agent+skills&tags=story&numericFilters=points%3E5&restrictSearchableAttributes=title&hitsPerPage=20",
+        "itemsPath": "hits",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "story_text"
+        ],
+        "authorPaths": [
+          "author"
+        ],
+        "publishedAtPath": "created_at",
+        "urlTemplate": "{raw:url}",
+        "urlTemplateFallback": "https://news.ycombinator.com/item?id={objectID}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-hn-mcp",
+      "name": "Hacker News · MCP",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://hnrss.org/newest?q=MCP",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-hn-prompt-injection",
+      "name": "Hacker News · Prompt Injection",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=prompt+injection&tags=story&numericFilters=points%3E5&restrictSearchableAttributes=title&hitsPerPage=20",
+        "itemsPath": "hits",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "story_text"
+        ],
+        "authorPaths": [
+          "author"
+        ],
+        "publishedAtPath": "created_at",
+        "urlTemplate": "{raw:url}",
+        "urlTemplateFallback": "https://news.ycombinator.com/item?id={objectID}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-sean-goedecke",
+      "name": "Sean Goedecke · Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.seangoedecke.com/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-simon-willison",
+      "name": "Simon Willison · Coding Agents",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://simonwillison.net/tags/coding-agents.atom",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-trail-of-bits",
+      "name": "Trail of Bits · Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://blog.trailofbits.com/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "安全"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-habr-ai",
+      "name": "Habr · AI Hub",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://habr.com/ru/rss/hubs/artificial_intelligence/articles/?fl=ru",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-habr-programming",
+      "name": "Habr · Programming Hub",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://habr.com/ru/rss/hubs/programming/articles/?fl=ru",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-ru-etechlead",
+      "name": "Этихлид",
+      "kind": "web_list",
+      "config": {
+        "parseMode": "html",
+        "itemSelector": ".tgme_widget_message_wrap",
+        "linkSelector": "a.tgme_widget_message_date",
+        "titleSelector": ".tgme_widget_message_text",
+        "publishedAtSelector": "time[datetime]",
+        "url": "https://t.me/s/etechlead",
+        "allowUrlPrefixes": [
+          "https://t.me/etechlead/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-zh-v2ex-claudecode",
+      "name": "V2EX · Claude Code",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.v2ex.com/feed/claudecode.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-zh-v2ex-vibecoding",
+      "name": "V2EX · Vibe Coding",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://global.v2ex.com/feed/vibecoding.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-agentic-engineer",
+      "name": "The Agentic Engineer · Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://agentic-engineer.com/feed.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-claude-dev-blog",
+      "name": "claude.dev · Anthropic Developer Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://claude.dev/rss.xml",
         "_aihot": {
           "initialBackfillLimit": 8
         }
@@ -149,226 +896,287 @@
         "官方",
         "教程"
       ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
+      "site_fulltext": true,
+      "syndicate_fulltext": true
     },
     {
-      "id": "rss-github-ai",
-      "name": "GitHub Blog · AI & ML",
+      "id": "rss-hn-agents-md",
+      "name": "Hacker News · AGENTS.md",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=AGENTS.md&tags=story&numericFilters=points%3E10&restrictSearchableAttributes=title&hitsPerPage=20",
+        "itemsPath": "hits",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "story_text"
+        ],
+        "authorPaths": [
+          "author"
+        ],
+        "publishedAtPath": "created_at",
+        "urlTemplate": "{raw:url}",
+        "urlTemplateFallback": "https://news.ycombinator.com/item?id={objectID}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "社区",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-simon-willison-tils",
+      "name": "Simon Willison · TIL",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://github.blog/ai-and-ml/feed/",
+        "feedUrl": "https://simonw-tils.fly.dev/tils/feed.atom",
         "_aihot": {
           "initialBackfillLimit": 8
         }
       },
-      "tier": "T1",
+      "tier": "T1_5",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-vibe-built",
+      "name": "Vibe Built · Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://vibebuilt.dev/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "个人",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-vibe-code-textbook",
+      "name": "Vibe Code Textbook · Articles",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://vibecodetextbook.com/feed.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-ru-habr-claude-code-search",
+      "name": "Habr · Claude Code",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://habr.com/ru/rss/search/?fl=ru&hl=ru&order_by=date&q=%5BClaude%20Code%5D&target_type=posts",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-ru-the-ai-architect",
+      "name": "Тимур Хахалев · AI Coding",
+      "kind": "web_list",
+      "config": {
+        "url": "https://t.me/s/the_ai_architect",
+        "parseMode": "html",
+        "itemSelector": ".tgme_widget_message_wrap",
+        "linkSelector": "a.tgme_widget_message_date",
+        "titleSelector": ".tgme_widget_message_text",
+        "publishedAtSelector": "time[datetime]",
+        "allowUrlPrefixes": [
+          "https://t.me/the_ai_architect/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "个人",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-zh-xiaochens",
+      "name": "陈与小金 · AI Coding 博客",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://blog.xiaochens.com/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-devto-claudecode",
+      "name": "DEV Community · Claude Code",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://dev.to/feed/tag/claudecode",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-devto-codex",
+      "name": "DEV Community · Codex",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://dev.to/feed/tag/codex",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-register-spill",
+      "name": "Thorsten Ball · Register Spill",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://registerspill.thorstenball.com/feed",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
       "first_party": true,
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-mistral",
-      "name": "Mistral AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://mistral.ai/rss.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-bair",
-      "name": "Berkeley AI Research",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://bair.berkeley.edu/blog/feed.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 180,
-      "tags": [
-        "研究"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-the-verge-ai",
-      "name": "The Verge · AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 60,
-      "tags": [
-        "媒体"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-techcrunch-ai",
-      "name": "TechCrunch · AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://techcrunch.com/category/artificial-intelligence/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 60,
-      "tags": [
-        "媒体"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-ars-technica-ai",
-      "name": "Ars Technica · AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://arstechnica.com/ai/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 60,
-      "tags": [
-        "媒体"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-mit-tech-review-ai",
-      "name": "MIT Technology Review · AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "媒体"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-the-decoder",
-      "name": "The Decoder",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://the-decoder.com/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 60,
-      "tags": [
-        "媒体"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-simon-willison",
-      "name": "Simon Willison",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://simonwillison.net/atom/everything/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "个人"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-import-ai",
-      "name": "Import AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://importai.substack.com/feed",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 180,
       "tags": [
         "个人",
         "周刊"
       ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
+      "site_fulltext": true,
+      "syndicate_fulltext": true
     },
     {
-      "id": "rss-latent-space",
-      "name": "Latent Space",
+      "id": "web-martinfowler-exploring-gen-ai",
+      "name": "Martin Fowler · Exploring Generative AI",
+      "kind": "web_list",
+      "config": {
+        "url": "https://martinfowler.com/articles/exploring-gen-ai.html",
+        "itemSelector": ".page",
+        "linkSelector": "p.title a[href]",
+        "titleSelector": "p.title",
+        "publishedAtSelector": "p.date",
+        "publishedAtUtcOffset": "+00:00",
+        "allowUrlPrefixes": [
+          "https://martinfowler.com/articles/exploring-gen-ai/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-ru-habr-vibecoding-search",
+      "name": "Habr · Вайбкодинг",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://www.latent.space/feed",
+        "feedUrl": "https://habr.com/ru/rss/search/?fl=ru&hl=ru&order_by=date&q=%5B%D0%B2%D0%B0%D0%B9%D0%B1%D0%BA%D0%BE%D0%B4%D0%B8%D0%BD%D0%B3%5D&target_type=posts",
         "_aihot": {
           "initialBackfillLimit": 8
         }
@@ -377,12 +1185,1708 @@
       "first_party": false,
       "owner_entity_id": null,
       "participation_mode": "editorial",
-      "interval_minutes": 180,
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-ru-ai-coder-news",
+      "name": "AI Coder · Telegram",
+      "kind": "web_list",
+      "config": {
+        "url": "https://t.me/s/ai_coder_news",
+        "parseMode": "html",
+        "itemSelector": ".tgme_widget_message_wrap",
+        "linkSelector": "a.tgme_widget_message_date",
+        "titleSelector": ".tgme_widget_message_text",
+        "publishedAtSelector": "time[datetime]",
+        "allowUrlPrefixes": [
+          "https://t.me/ai_coder_news/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "个人",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-ru-ai-driven",
+      "name": "AI-Driven Development · Родион Мостовой",
+      "kind": "web_list",
+      "config": {
+        "url": "https://t.me/s/ai_driven",
+        "parseMode": "html",
+        "itemSelector": ".tgme_widget_message_wrap",
+        "linkSelector": "a.tgme_widget_message_date",
+        "titleSelector": ".tgme_widget_message_text",
+        "publishedAtSelector": "time[datetime]",
+        "allowUrlPrefixes": [
+          "https://t.me/ai_driven/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "个人",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-zh-chen-dahuang",
+      "name": "Chen Dahuang · AI Coding 实录",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://chendahuang.com/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-zh-linux-do-vibecoding",
+      "name": "LINUX DO · VibeCoding",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://linux.do/tag/VibeCoding.rss",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-permission-protocol-agent-incidents",
+      "name": "Permission Protocol · AI Agent Incident Tracker",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://permissionprotocol.com/agent-incident-tracker/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "安全"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-anthropic-model-launches",
+      "name": "Anthropic · Claude Model Launches",
+      "kind": "web_list",
+      "config": {
+        "url": "https://www.anthropic.com/news",
+        "itemSelector": "a[class*=\"FeaturedGrid-module\"][href^=\"/claude-\"]:has(time)",
+        "titleSelector": "h2,h3,h4",
+        "publishedAtSelector": "time",
+        "allowUrlPrefixes": [
+          "https://www.anthropic.com/claude-"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-arena-blog",
+      "name": "Arena · Blog",
+      "kind": "web_list",
+      "config": {
+        "url": "https://arena.ai/blog",
+        "itemSelector": "a[href^=\"/blog/\"]:has(article)",
+        "titleSelector": "h3",
+        "publishedAtRegex": "([0-9]{1,2} [A-Za-z]+ 20[0-9]{2})",
+        "allowUrlPrefixes": [
+          "https://arena.ai/blog/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-artificial-analysis-articles",
+      "name": "Artificial Analysis · Articles",
+      "kind": "web_list",
+      "config": {
+        "url": "https://artificialanalysis.ai/articles",
+        "itemSelector": "a[href^=\"/articles/\"]:has(h3):has(p)",
+        "titleSelector": "h3",
+        "publishedAtSelector": "p.text-xs",
+        "allowUrlPrefixes": [
+          "https://artificialanalysis.ai/articles/"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-addy-osmani",
+      "name": "Addy Osmani · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:addyosmani -filter:replies"
+      },
+      "tier": "T1_5",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
       "tags": [
         "个人"
       ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-amp",
+      "name": "Amp · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:AmpCode -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-boris-cherny",
+      "name": "Boris Cherny · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:bcherny -filter:replies"
+      },
+      "tier": "T1_5",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-claude-devs",
+      "name": "Claude Developers · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:ClaudeDevs -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-anthropic",
+      "name": "Anthropic · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:AnthropicAI -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-arena",
+      "name": "Arena · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:arena -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-artificial-analysis",
+      "name": "Artificial Analysis · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:ArtificialAnlys -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-claude",
+      "name": "Claude · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:claudeai -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-deepseek",
+      "name": "DeepSeek · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:deepseek_ai -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-kimi",
+      "name": "Kimi · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Kimi_Moonshot -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-minimax",
+      "name": "MiniMax · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:MiniMax_AI -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-openai",
+      "name": "OpenAI · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:OpenAI -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-qwen",
+      "name": "Qwen · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Alibaba_Qwen -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-zai",
+      "name": "Z.ai · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Zai_org -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-cline",
+      "name": "Cline · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:cline -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-cognition",
+      "name": "Cognition · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:cognition -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-cursor",
+      "name": "Cursor · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:cursor_ai -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-kilo",
+      "name": "Kilo · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:kilocode -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-minimax-agent",
+      "name": "MiniMax Code · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:MiniMaxAgent -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-openai-devs",
+      "name": "OpenAI Developers · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:OpenAIDevs -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-opencode",
+      "name": "OpenCode · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:opencode -filter:replies"
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-tibo-sottiaux",
+      "name": "Thibault Sottiaux · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:thsottiaux -filter:replies"
+      },
+      "tier": "T1_5",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-jesse-vincent",
+      "name": "Jesse Vincent",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://blog.fsck.com/feed/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-ryan-lopopolo",
+      "name": "Ryan Lopopolo",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://hyperbo.la/w/feed.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-openai-codex-blog",
+      "name": "OpenAI Developer Blog · Codex",
+      "kind": "web_list",
+      "config": {
+        "url": "https://developers.openai.com/blog/topic/codex",
+        "parseMode": "html",
+        "itemSelector": "a.resource-item[href^=\"/blog/\"]",
+        "titleSelector": ".line-clamp-2",
+        "allowUrlPrefixes": [
+          "https://developers.openai.com/blog/"
+        ],
+        "detail": {
+          "maxFetches": 16,
+          "publishedAtRegex": "([A-Z][a-z]{2} [0-9]{1,2}, 20[0-9]{2})"
+        },
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-cursor-forum-guides",
+      "name": "Cursor Forum · Guides",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://forum.cursor.com/c/guides/20.rss",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-github-blog-copilot",
+      "name": "GitHub Blog · Copilot",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://github.blog/ai-and-ml/github-copilot/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-yt-ai-engineer",
+      "name": "AI Engineer · YouTube",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UCLKPca3kwwd-B59HNr-_lvA",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "媒体"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-yt-cole-medin",
+      "name": "Cole Medin · YouTube",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UCMwVTLZIRRUyyVrkjDpn4pA",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-habr-kova13v",
+      "name": "Habr · Kova13v",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://habr.com/ru/rss/users/Kova13v/articles/?fl=ru",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-martin-alderson",
+      "name": "Martin Alderson",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://martinalderson.com/feed.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-harper-reed",
+      "name": "Harper Reed",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://harper.blog/posts/index.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-birgitta",
+      "name": "Birgitta Böckeler",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://birgitta.info/feed.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T1_5",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-armin-ronacher",
+      "name": "Armin Ronacher",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://lucumr.pocoo.org/feed.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-pragmatic-engineer",
+      "name": "The Pragmatic Engineer",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://newsletter.pragmaticengineer.com/feed",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "媒体"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-dan-luu",
+      "name": "Dan Luu",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://danluu.com/atom.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-drew-breunig",
+      "name": "Drew Breunig",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.dbreunig.com/feed.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-baoyu",
+      "name": "宝玉",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://baoyu.io/feed.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-steve-yegge",
+      "name": "Steve Yegge",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://medium.com/feed/@steve-yegge",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-hn-claude-code-100",
+      "name": "Hacker News · Claude Code 高分",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=Claude+Code&tags=story&numericFilters=points%3E100&restrictSearchableAttributes=title&hitsPerPage=20",
+        "itemsPath": "hits",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "story_text"
+        ],
+        "authorPaths": [
+          "author"
+        ],
+        "publishedAtPath": "created_at",
+        "urlTemplate": "{raw:url}",
+        "urlTemplateFallback": "https://news.ycombinator.com/item?id={objectID}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-hn-frontpage-ai-coding",
+      "name": "Hacker News · Coding Agent 高分",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=coding+agent&tags=story&numericFilters=points%3E100&restrictSearchableAttributes=title&hitsPerPage=20",
+        "itemsPath": "hits",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "story_text"
+        ],
+        "authorPaths": [
+          "author"
+        ],
+        "publishedAtPath": "created_at",
+        "urlTemplate": "{raw:url}",
+        "urlTemplateFallback": "https://news.ycombinator.com/item?id={objectID}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-gh-codex-workaround",
+      "name": "Codex issues · workaround",
+      "kind": "json_list",
+      "config": {
+        "url": "https://api.github.com/search/issues?q=repo%3Aopenai%2Fcodex%20is%3Aissue%20%22workaround%22%20in%3Abody%20comments%3A%3E%3D2&sort=created&order=desc&per_page=20",
+        "itemsPath": "items",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "body"
+        ],
+        "publishedAtPath": "created_at",
+        "urlTemplate": "{raw:html_url}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-thoughtworks-engineering",
+      "name": "Thoughtworks · Engineering",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.thoughtworks.com/rss/engineering.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "官方",
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-infoq-ai-coding",
+      "name": "InfoQ · AI Coding",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://feed.infoq.com/ai-coding/",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "媒体",
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-infoq-ai-coding-presentations",
+      "name": "InfoQ · AI Coding Presentations",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://feed.infoq.com/ai-coding/presentations/",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "媒体",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-leaddev-engineering-ai",
+      "name": "LeadDev · Engineering Leadership",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://leaddev.com/feed",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "媒体",
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-paper-compute-blog",
+      "name": "Paper Compute · Engineering Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://papercompute.com/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "个人",
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-kondasamy-ai-engineering",
+      "name": "Kondasamy Jayaraman · Engineering Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://kondasamy.com/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "个人",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-johnny-butler-agent-engineering",
+      "name": "Johnny Butler · Agentic Engineering",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://world.hey.com/johnnybutler/feed.atom",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人",
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-sourcegraph-agent-engineering",
+      "name": "Sourcegraph · Engineering Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://sourcegraph.com/blog/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "官方",
+        "教程"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-shopify-engineering-ai-workflows",
+      "name": "Shopify Engineering · AI Workflows",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://shopify.engineering/blog.atom",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "官方",
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "web-motyl-ai-weekly",
+      "name": "motyl.dev · AI for FE Weekly",
+      "kind": "web_list",
+      "config": {
+        "url": "https://motyl.dev/newsletter",
+        "parseMode": "html",
+        "itemSelector": "a[href^=\"/newsletter/\"]",
+        "titleSelector": "h2,h3",
+        "allowUrlPrefixes": [
+          "https://motyl.dev/newsletter/"
+        ],
+        "publishedAtRegex": "([A-Z][a-z]{2} [0-9]{1,2}, 20[0-9]{2})",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "个人",
+        "周刊",
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-hn-coding-agent-discussion",
+      "name": "Hacker News · Coding Agent 讨论",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=coding%20agent&tags=story&numericFilters=points%3E30&hitsPerPage=20",
+        "itemsPath": "hits",
+        "titlePaths": [
+          "title"
+        ],
+        "publishedAtPath": "created_at",
+        "urlTemplate": "https://news.ycombinator.com/item?id={objectID}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "社区",
+        "开源"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-hn-ai-code-review-discussion",
+      "name": "Hacker News · AI Code Review 讨论",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=AI%20code%20review&tags=story&numericFilters=points%3E20&hitsPerPage=20",
+        "itemsPath": "hits",
+        "titlePaths": [
+          "title"
+        ],
+        "publishedAtPath": "created_at",
+        "urlTemplate": "https://news.ycombinator.com/item?id={objectID}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "社区",
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-hn-context-engineering-discussion",
+      "name": "Hacker News · Context Engineering 讨论",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=context%20engineering&tags=story&numericFilters=points%3E20&hitsPerPage=20",
+        "itemsPath": "hits",
+        "titlePaths": [
+          "title"
+        ],
+        "publishedAtPath": "created_at",
+        "urlTemplate": "https://news.ycombinator.com/item?id={objectID}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "社区",
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-hn-harness-engineering-discussion",
+      "name": "Hacker News · Harness Engineering 讨论",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=harness%20engineering&tags=story&numericFilters=points%3E20&hitsPerPage=20",
+        "itemsPath": "hits",
+        "titlePaths": [
+          "title"
+        ],
+        "publishedAtPath": "created_at",
+        "urlTemplate": "https://news.ycombinator.com/item?id={objectID}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "社区",
+        "研究"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-console-dev-tools-weekly",
+      "name": "Console.dev · Devtools Weekly",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://console.dev/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "周刊",
+        "媒体",
+        "开源"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-gh-mcp-developer-tools",
+      "name": "GitHub · MCP Developer Tools 活跃仓库",
+      "kind": "json_list",
+      "config": {
+        "url": "https://api.github.com/search/repositories?q=topic%3Amcp-server%20topic%3Adeveloper-tools%20-user%3AAlpha-Park%20-user%3Aalphaparkinc%20created%3A%3E2026-01-01%20stars%3A%3E%3D5&sort=updated&order=desc&per_page=20",
+        "itemsPath": "items",
+        "titlePaths": [
+          "full_name"
+        ],
+        "summaryPaths": [
+          "description"
+        ],
+        "publishedAtPath": "updated_at",
+        "urlTemplate": "{raw:html_url}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "开源",
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-gh-developer-agent-skills",
+      "name": "GitHub · Developer Agent Skills 活跃仓库",
+      "kind": "json_list",
+      "config": {
+        "url": "https://api.github.com/search/repositories?q=topic%3Aagent-skills%20topic%3Adeveloper-tools%20created%3A%3E2026-01-01%20stars%3A%3E%3D5&sort=updated&order=desc&per_page=20",
+        "itemsPath": "items",
+        "titlePaths": [
+          "full_name"
+        ],
+        "summaryPaths": [
+          "description"
+        ],
+        "publishedAtPath": "updated_at",
+        "urlTemplate": "{raw:html_url}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "开源",
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-gh-ai-coding-developer-tools",
+      "name": "GitHub · AI Coding Developer Tools 活跃仓库",
+      "kind": "json_list",
+      "config": {
+        "url": "https://api.github.com/search/repositories?q=topic%3Aai-coding%20topic%3Adeveloper-tools%20created%3A%3E2026-01-01%20stars%3A%3E%3D5&sort=updated&order=desc&per_page=20",
+        "itemsPath": "items",
+        "titlePaths": [
+          "full_name"
+        ],
+        "summaryPaths": [
+          "description"
+        ],
+        "publishedAtPath": "updated_at",
+        "urlTemplate": "{raw:html_url}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "fetchPublicContent": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "开源",
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-thariq",
+      "name": "Thariq Shihipar · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:trq212 -filter:replies"
+      },
+      "tier": "T1_5",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-ryan-lopopolo",
+      "name": "Ryan Lopopolo · X",
+      "kind": "x_search",
+      "config": {
+        "query": "from:_lopopolo -filter:replies"
+      },
+      "tier": "T1_5",
+      "first_party": true,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "个人"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-search-claude-code-workflow",
+      "name": "X 热帖 · Claude Code 工作流",
+      "kind": "x_search",
+      "config": {
+        "query": "\"claude code\" (\"CLAUDE.md\" OR workflow OR \"lessons learned\") min_faves:80 -filter:replies",
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-search-context-cost",
+      "name": "X 热帖 · 上下文与成本",
+      "kind": "x_search",
+      "config": {
+        "query": "\"claude code\" (context OR compaction OR tokens OR cost) (fix OR workflow OR lesson) min_faves:60 -filter:replies",
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-search-codex-agents-md",
+      "name": "X 热帖 · Codex 配置",
+      "kind": "x_search",
+      "config": {
+        "query": "(\"codex cli\" OR \"openai codex\") (\"AGENTS.md\" OR skills OR workflow) min_faves:50 -filter:replies",
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-search-skills-hooks",
+      "name": "X 热帖 · Skills 与 Hooks",
+      "kind": "x_search",
+      "config": {
+        "query": "(\"SKILL.md\" OR hooks OR subagents) \"claude code\" min_faves:50 -filter:replies",
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-search-zh",
+      "name": "X 热帖 · 中文实战",
+      "kind": "x_search",
+      "config": {
+        "query": "(\"Claude Code\" OR Codex OR Cursor) (踩坑 OR 复盘 OR 实战 OR 工作流) lang:zh min_faves:30 -filter:replies",
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "x-search-ru",
+      "name": "X 热帖 · 俄语实战",
+      "kind": "x_search",
+      "config": {
+        "query": "(\"Claude Code\" OR Codex OR Cursor) (опыт OR ошибки OR настройка) lang:ru min_faves:20 -filter:replies",
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
     }
   ]
 }

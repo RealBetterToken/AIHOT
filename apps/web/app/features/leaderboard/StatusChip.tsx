@@ -1,3 +1,4 @@
+import { useKnownT } from "../../i18n/index";
 import type { LbSourceStatus } from "@aihot/contracts/leaderboard";
 import { LB_SOURCE_STATUS_LABELS } from "@aihot/contracts/leaderboard";
 
@@ -10,9 +11,10 @@ const STATUS_TONE: Record<LbSourceStatus, string> = {
 };
 
 export function StatusChip({ status, large = false }: { status: LbSourceStatus; large?: boolean }) {
+  const knownT = useKnownT();
   return (
     <span className={`inline-flex shrink-0 items-center rounded-mark border font-medium ${large ? "h-7 px-2.5 text-[12.5px]" : "h-[22px] px-2 text-[11px]"} ${STATUS_TONE[status]}`}>
-      {LB_SOURCE_STATUS_LABELS[status]}
+      {knownT(LB_SOURCE_STATUS_LABELS[status])}
     </span>
   );
 }

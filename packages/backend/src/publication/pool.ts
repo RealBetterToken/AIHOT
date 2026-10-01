@@ -1,9 +1,12 @@
 // Public pool (/all) with numeric pages, and search in its two orderings.
+import { DEFAULT_LOCALE, type Locale } from "@aihot/contracts/locale";
+import { localizeItemStories } from "./localized-story-report.ts";
+import { localizeArticles } from "./localized.ts";
 import type { PoolResponse, TimelineFilters } from "@aihot/contracts/site";
 import { beijingDate, beijingMidnight } from "@aihot/contracts/time";
 import { one, sql, withCustomPlans, type Db } from "../db.ts";
 import {
-  categoryCondition, channelCondition, ITEM_COLUMNS, ITEM_FROM, listedCondition, tagCondition, toFeedItemSummary, topicCondition,
+  categoryCondition, channelCondition, ITEM_COLUMNS, itemFrom, listedCondition, tagCondition, toFeedItemSummary, topicCondition,
   type ItemRow,
 } from "./items.ts";
 
@@ -103,6 +106,7 @@ async function poolCount(key: string | null, query: () => Promise<Array<{ n: num
 }
 
 export interface PoolQuery extends TimelineFilters {
+  locale?: Locale;
   q?: string | null;
   tab?: "time" | "relevance";
   page?: number;
@@ -120,7 +124,7 @@ export async function loadPool(query: PoolQuery): Promise<PoolResponse> {
   const offset = (page - 1) * POOL_PAGE_SIZE;
   const cap = POOL_MAX_PAGES * POOL_PAGE_SIZE;
   // A fixed clock (tests, replays) never shares cached totals.
-  const filterKey = query.now ? null : JSON.stringify([query.channel, query.category, query.tag, query.topicTags ?? null]);
+  const filterKey = query.now ? null : JSON.stringify([query.channel, query.category, query.tag, query.topicTags ?? null, query.locale ?? DEFAULT_LOCALE]);
 
   // Searches go through pool_search (eligible items only): trigram indexes for longer terms, a small
   // table to scan for one- and two-character ones.
@@ -132,7 +136,7 @@ export async function loadPool(query: PoolQuery): Promise<PoolResponse> {
         WITH page AS (
           SELECT p.article_id FROM publications p WHERE ${listedCondition(now)} AND p.eligible ${filters}
           ORDER BY p.timeline_at DESC, p.article_id DESC LIMIT ${POOL_PAGE_SIZE} OFFSET ${offset})
-        SELECT ${ITEM_COLUMNS} ${ITEM_FROM} WHERE p.article_id IN (SELECT article_id FROM page)
+        SELECT ${ITEM_COLUMNS} ${itemFrom(query.locale)} WHERE p.article_id IN (SELECT article_id FROM page)
         ORDER BY p.timeline_at DESC, p.article_id DESC`;
       return { rows, total: await poolCount(filterKey, () => db<{ n: number }[]>`
         SELECT count(*) AS n FROM (SELECT 1 FROM publications p WHERE ${listedCondition(now)} AND p.eligible ${filters} LIMIT ${cap}) t`) };
@@ -168,7 +172,7 @@ export async function loadPool(query: PoolQuery): Promise<PoolResponse> {
           LIMIT ${POOL_PAGE_SIZE} OFFSET ${offset}
         ), total AS (SELECT count(*) AS n FROM (SELECT 1 FROM scored LIMIT ${cap}) capped)
         SELECT hydrated.*, total.n AS total FROM total LEFT JOIN LATERAL (
-          SELECT ${ITEM_COLUMNS}, page.rel ${ITEM_FROM} JOIN page ON page.article_id = p.article_id
+          SELECT ${ITEM_COLUMNS}, page.rel ${itemFrom(query.locale)} JOIN page ON page.article_id = p.article_id
         ) hydrated ON true ORDER BY hydrated.rel DESC, hydrated.timeline_at DESC, hydrated.id DESC`;
       const rows = result.filter((r): r is ItemRow & { rel: number; total: number } => r.id !== null);
       return { rows, total: Number(result[0]!.total) };
@@ -179,7 +183,7 @@ export async function loadPool(query: PoolQuery): Promise<PoolResponse> {
       WITH page AS (
         SELECT p.article_id FROM publications p WHERE ${listedCondition(now)} AND p.eligible ${filters} ${directMatchCondition(terms)}
         ORDER BY p.timeline_at DESC, p.article_id DESC LIMIT ${POOL_PAGE_SIZE} OFFSET ${offset})
-      SELECT ${ITEM_COLUMNS} ${ITEM_FROM} WHERE p.article_id IN (SELECT article_id FROM page)
+      SELECT ${ITEM_COLUMNS} ${itemFrom(query.locale)} WHERE p.article_id IN (SELECT article_id FROM page)
       ORDER BY p.timeline_at DESC, p.article_id DESC`;
     const direct = terms.reduce((acc, t) => sql`${acc} AND ${like(sql`ps.direct`, t)}`, sql``);
     const { n } = one(await db<{ n: number }[]>`
@@ -197,7 +201,7 @@ export async function loadPool(query: PoolQuery): Promise<PoolResponse> {
 
   return {
     filters: { channel: query.channel, category: query.category, tag: query.tag, topic: query.topic ?? null, q, tab },
-    items: rows.map(toFeedItemSummary),
+    items: (await localizeItemStories(await localizeArticles(rows, query.locale ?? DEFAULT_LOCALE), query.locale ?? DEFAULT_LOCALE)).map(toFeedItemSummary),
     page,
     pageCount: Math.min(POOL_MAX_PAGES, Math.max(1, Math.ceil(total / POOL_PAGE_SIZE))),
     total,

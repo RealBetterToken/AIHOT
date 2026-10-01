@@ -167,7 +167,7 @@ export async function fetchJsonList(source: SourceRow): Promise<Candidate[]> {
     const summary = firstString(item, c.summaryPaths);
     const raw = item && typeof item === "object" ? { ...(item as Record<string, unknown>) } : { value: item };
     for (const k of c.rawDropKeys ?? []) delete (raw as Record<string, unknown>)[k];
-    const summaryIsBody = c.summaryIsBody === true && !!summary;
+    const summaryIsBody = c.summaryIsBody === true && c.fetchPublicContent !== true && !!summary;
     out.push({
       url,
       title: collapseWhitespace(stripTags(title)),

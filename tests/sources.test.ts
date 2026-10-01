@@ -9,6 +9,7 @@ import http from "node:http";
 import { after, test } from "node:test";
 import { config } from "@aihot/backend/config";
 import { sanitizeBody, trimTrailingChrome } from "@aihot/backend/content/sanitize";
+import { readable } from "@aihot/backend/content/extract";
 import { fetchDetail, fetchWebList, fromHtml, fromMarkdown } from "@aihot/backend/sources/web-list";
 import { fetchRss } from "@aihot/backend/sources/rss";
 import { fetchJsonList } from "@aihot/backend/sources/json-list";
@@ -16,6 +17,47 @@ import { noiseFiltered } from "@aihot/backend/sources/collect";
 import { unsupportedConfig } from "@aihot/backend/sources/config-keys";
 
 const source = (config: Record<string, unknown>) => ({ id: "test-list", config }) as never;
+
+test("GitHub 发布说明只提取正文，短发布说明不混入标签和下载界面", () => {
+  const html = `<html><body><main><h1>Choose a tag to compare</h1><p>${"View all tags and download assets. ".repeat(30)}</p>
+    <div data-test-selector="body-content" class="markdown-body"><h2>What's changed</h2>
+    <ul><li>Fixed requests failing with <code>400</code> behind a proxy.</li></ul></div>
+    <footer>Assets and reactions</footer></main></body></html>`;
+  const got = readable(html, "https://github.com/anthropics/claude-code/releases/tag/v2.1.276");
+  assert.ok(got);
+  assert.equal(got.text, "What's changed Fixed requests failing with 400 behind a proxy.");
+  assert.ok(got.html.includes("<code>400</code>"));
+  assert.ok(!got.html.includes("Choose a tag"));
+});
+
+test("GitHub 发布页缺少发布说明时不把界面文字当成正文", () => {
+  const html = `<html><body><main><h1>Choose a tag</h1><p>${"View all tags and download assets. ".repeat(30)}</p></main></body></html>`;
+  assert.equal(readable(html, "https://github.com/openai/codex/releases/tag/v1"), null);
+});
+
+test("Telegram 嵌入页只提取指定消息的完整正文，保留换行和代码", () => {
+  const html = `<html><body>
+    <div data-post="ai_coder_news/584"><div class="tgme_widget_message_text">Other post</div></div>
+    <div data-post="ai_coder_news/585"><div class="tgme_widget_message_text"><b>Новости Claude Code</b><br><br>Используйте <code>shunt</code><br>Конец сообщения.</div></div>
+    <footer>${"Open in Telegram. ".repeat(30)}</footer></body></html>`;
+  const got = readable(html, "https://t.me/ai_coder_news/585?embed=1");
+  assert.ok(got);
+  assert.equal(got.text, "Новости Claude Code Используйте shunt Конец сообщения.");
+  assert.ok(got.html.includes("<p>"));
+  assert.ok(got.html.includes("<code>shunt</code>"));
+  assert.ok(!got.html.includes("Other post"));
+});
+
+test("Telegram 正文容器不属于当前消息时保持未确认", () => {
+  const html = `<html><body><div data-post="ai_coder_news/584"><div class="tgme_widget_message_text">${"Другая публикация. ".repeat(30)}</div></div></body></html>`;
+  assert.equal(readable(html, "https://t.me/ai_coder_news/585?embed=1"), null);
+});
+
+test("没有帖子正文或评论的 Hacker News 讨论页不把导航当成全文", () => {
+  const html = `<html><body><main><span class="pagetop">${"Hacker News new past comments ask show jobs submit login ".repeat(10)}</span>
+    <span class="titleline"><a href="https://example.org/video">NP and PSPACE Video Games</a></span><div class="toptext"></div></main></body></html>`;
+  assert.equal(readable(html, "https://news.ycombinator.com/item?id=14569217"), null);
+});
 
 // mimo.xiaomi.com as served on 2026-09-28, cut down: rows that navigate by script, the runtime's chunk
 // map, the route table naming the homepage's chunks, and the chunk with the Blog list among the menu,
@@ -209,4 +251,19 @@ test("dates in yyyymmdd and in JSON-LD are read", async () => {
   assert.deepEqual(days.map((c) => c.publishedAt?.toISOString() ?? null), ["2026-09-22T00:00:00.000Z", null], "February 30 is no date");
   const got = await fetchDetail(`${site}/ld-post`, { id: "test-feed", config: { detail: { maxFetches: 20 } } } as never, { date: true, title: false, summary: false, body: false });
   assert.equal(got.publishedAt?.toISOString(), "2026-09-24T00:00:00.000Z");
+});
+
+test("fetchPublicContent 的 RSS / JSON 摘要进入原文抽取，不再当作完整正文", async () => {
+  const teaser = 'A feed paragraph with only a summary. '.repeat(12);
+  pages['/summary-feed'] = () => `<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><item><title>Summary</title><link>https://example.org/article</link><content:encoded><![CDATA[<p>${teaser}</p>]]></content:encoded></item></channel></rss>`;
+  pages['/summary-json'] = () => JSON.stringify([{title:'Summary',url:'https://example.org/article',summary:teaser}]);
+  const rssSource = { id:"test-fetch-full", kind:'rss', participation_mode:'editorial', config:{feedUrl:`${site}/summary-feed`} };
+  const full = await fetchRss(rssSource as never);
+  assert.equal(full.candidates[0]!.bodyStatus,'ok');
+  const pending = await fetchRss({ ...rssSource,config:{ ...rssSource.config,fetchPublicContent:true} } as never);
+  assert.equal(pending.candidates[0]!.bodyStatus,'pending');
+  assert.ok(pending.candidates[0]!.excerpt?.includes('only a summary'));
+  const json = await fetchJsonList(source({url:`${site}/summary-json`,titlePaths:['title'],urlTemplate:'{raw:url}',summaryPaths:['summary'],summaryIsBody:true,fetchPublicContent:true}));
+  assert.equal(json[0]!.bodyStatus,'pending');
+  assert.equal(json[0]!.bodyText,null);
 });
