@@ -3,6 +3,7 @@ import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
 import { isApiOwned, resolveRedirect } from "@aihot/contracts/http-policy";
+import { legacyLocation, localeFromPath, localePath, stripLocale } from "./app/i18n/locale.ts";
 
 const API = new URL(process.env.API_BASE_URL || "http://127.0.0.1:3001");
 
@@ -17,10 +18,18 @@ function devEdge(): Plugin {
         const pathname = qi >= 0 ? raw.slice(0, qi) : raw;
         const search = qi >= 0 ? raw.slice(qi) : "";
         if (pathname.startsWith("/@") || pathname.startsWith("/node_modules/") || pathname.startsWith("/app/") || pathname.startsWith("/__")) return next();
-        const decision = resolveRedirect(pathname, search);
+        const preferenceHeaders = new Headers();
+        for (const name of ["cookie", "accept-language"]) if (req.headers[name]) preferenceHeaders.set(name, String(req.headers[name]));
+        const legacy = !pathname.endsWith(".data") && !isApiOwned(pathname) ? legacyLocation(pathname, search, preferenceHeaders) : null;
+        if (legacy) {
+          res.writeHead(302, { Location: legacy, "Cache-Control": "private, no-store", Vary: "Accept-Language, Cookie" });
+          return res.end();
+        }
+        const bare = stripLocale(pathname);
+        const decision = resolveRedirect(bare, search);
         if (decision) {
           for (const [k, v] of Object.entries(decision.headers)) res.setHeader(k, v);
-          if (decision.location) res.setHeader("Location", decision.location);
+          if (decision.location) res.setHeader("Location", bare !== pathname ? localePath(decision.location, localeFromPath(pathname)) : decision.location);
           res.statusCode = decision.status;
           return res.end();
         }

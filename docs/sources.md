@@ -21,7 +21,7 @@
 { "feedUrl": "https://example.com/feed.xml" }
 ```
 
-可选：`summaryIsBody`（订阅里的摘要就是全文）、`allowCategories` / `denyCategories`（按订阅里的分类过滤）。
+可选：`fetchPublicContent`（订阅只给摘要时设为 true，正文通过正常队列从原文页抽取，不把 feed 文本当全文）、`summaryIsBody`（订阅里的摘要就是全文）、`allowCategories` / `denyCategories`（按订阅里的分类过滤）。
 
 ### web_list
 
@@ -60,7 +60,7 @@
 - **分级** `tier`：`T1` 官方一手（官网、官方博客、机构）、`T1_5` 官方账号与准官方创作者、`T2` 媒体与个人、`EXCLUDE_MP` 不参与精选。入选门槛按分级不同（`industry/selection.ts`）。
 - **参与方式** `participation_mode`：`editorial` 进精选和全部动态；`hot_signal` 不单独展示，只作为“大家在讨论什么”的热度证据；`isolated` 不进任何公开页面。
 - **一手** `first_party`：来源是当事方自己。事件页会优先展示一手报道。
-- **全文**：`site_fulltext` 决定站内能不能显示全文，`syndicate_fulltext` 决定全文 RSS 能不能带正文。两者**默认都关**，只显示摘要和原文链接；来源明确允许时再打开。公众号、付费墙内容不会因为技术上抓得到就获得全文展示。
+- **全文**：`site_fulltext` 决定站内能不能显示全文，`syndicate_fulltext` 决定全文 RSS 能不能带正文。两者**默认都开**：站内展示已成功抽取的全文，全文 RSS 默认带正文。公众号、付费墙内容也遵循相同开关；如个别来源不允许转载，可在后台关闭 `site_fulltext` / `syndicate_fulltext`。抓不到的正文仍只展示摘要和原文链接。
 
 ## 抓取频率
 

@@ -3,11 +3,13 @@
 //   node scripts/smoke.ts [--base http://localhost:3000]
 import { SITE } from "@aihot/industry/site";
 import { FEATURES } from "@aihot/industry/features";
+import { LOCALES } from "@aihot/contracts/locale";
 
 const at = process.argv.indexOf("--base");
 const base = (at > 0 ? process.argv[at + 1] : process.env.SITE_URL) ?? "http://localhost:3000";
 
-const PAGES = ["/", "/all", "/hot", "/daily", "/daily/archive", "/topics", "/starred", "/agent", "/about", "/changelog", "/feedback", "/terms", "/privacy", "/more", "/admin/login"];
+const PUBLIC_PAGES = ["", "/all", "/hot", "/daily", "/daily/archive", "/topics", "/starred", "/agent", "/about", "/changelog", "/feedback", "/terms", "/privacy", "/more"];
+const PAGES = [...LOCALES.flatMap((lang) => PUBLIC_PAGES.map((path) => `/${lang}${path}`)), "/admin/login"];
 const MACHINE: Array<[path: string, type: RegExp]> = [
   ["/api/health", /json/],
   ["/api/v1/items", /json/],
@@ -26,12 +28,12 @@ const MACHINE: Array<[path: string, type: RegExp]> = [
 ];
 // The leaderboard pages answer 503 until the first round is published (a fresh site computes it when
 // the worker starts; with collection off there is nothing to compute).
-const LEADERBOARD = FEATURES.leaderboard ? ["/leaderboard", "/leaderboard/rules", "/leaderboard/sources"] : [];
+const LEADERBOARD = FEATURES.leaderboard ? LOCALES.flatMap((lang) => ["/leaderboard", "/leaderboard/rules", "/leaderboard/sources"].map((path) => `/${lang}${path}`)) : [];
 PAGES.push(...LEADERBOARD);
-if (FEATURES.codexResetMonitor) PAGES.push("/codex-reset");
+if (FEATURES.codexResetMonitor) PAGES.push(...LOCALES.map((lang) => `/${lang}/codex-reset`));
 
 let failed = 0;
-async function check(path: string, expect: (res: Response, body: string) => string | null) {
+async function check(path: string, expect: (res: Response, body: string) => string | null, status = 200) {
   try {
     const res = await fetch(base + path, { redirect: "manual", signal: AbortSignal.timeout(30_000) });
     const body = res.headers.get("content-type")?.startsWith("image/") ? "" : await res.text();
@@ -39,7 +41,7 @@ async function check(path: string, expect: (res: Response, body: string) => stri
       console.log(`– ${path}  no leaderboard round published yet`);
       return;
     }
-    const problem = res.status !== 200 ? `HTTP ${res.status}` : expect(res, body);
+    const problem = res.status !== status ? `HTTP ${res.status}` : expect(res, body);
     console.log(`${problem ? "✗" : "✓"} ${path}${problem ? `  ${problem}` : ""}`);
     if (problem) failed += 1;
   } catch (error) {
@@ -48,6 +50,7 @@ async function check(path: string, expect: (res: Response, body: string) => stri
   }
 }
 
+await check("/", (res) => /^\/(?:zh|ru|en)(?:\?|$)/.test(res.headers.get("location") ?? "") ? null : "缺少语言跳转", 302);
 for (const path of PAGES) await check(path, (_res, body) => (body.includes(SITE.name) ? null : `the page does not name ${SITE.name}`));
 for (const [path, type] of MACHINE) await check(path, (res) => (type.test(res.headers.get("content-type") ?? "") ? null : `content-type ${res.headers.get("content-type")}`));
 // MCP: the handshake answers with the site's server name.

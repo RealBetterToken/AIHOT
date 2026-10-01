@@ -40,14 +40,13 @@ export function isSelectable(eligible: boolean, judgedSelected: boolean | null, 
 }
 
 /**
- * Site full text: the source licence allows showing it and we have confirmed body text.
- * WeChat and paywalled content never get it just because it was fetchable (source flag false).
+ * 站内默认展示已确认的正文；个别信源可关闭，无公众号或付费墙类型限制。
  */
 export function bodyModeOf(source: SourceFacts, bodyStatus: string, hasBody: boolean): "full" | "summary" {
   return source.site_fulltext && bodyStatus === "ok" && hasBody ? "full" : "summary";
 }
 
-/** Full-RSS redistribution whitelist: only sources that explicitly allow it. */
+/** 全文 RSS 默认带正文，仍尊重每个信源的开关。 */
 export function mayRedistribute(source: SourceFacts, bodyMode: "full" | "summary"): boolean {
   return source.syndicate_fulltext && bodyMode === "full";
 }

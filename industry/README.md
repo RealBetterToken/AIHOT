@@ -15,3 +15,5 @@
 | `pages/` | 使用规则、隐私说明（模板，上线前按实际情况改写） |
 | `changelog.json` | 更新日志 |
 | `gold.example.jsonl` | 精选评测样本的格式示例 |
+
+信源默认在站内展示全文，全文 RSS 默认带正文。个别来源不允许转载时，在后台关闭该信源的 `site_fulltext` / `syndicate_fulltext`；抽取失败时保留摘要和原文链接。

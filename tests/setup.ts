@@ -44,7 +44,14 @@ export async function stub(answer: (hit: number, req: { url: string; body: strin
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()));
   const { port } = server.address() as { port: number };
-  return { url: `http://127.0.0.1:${port}`, hits: () => hits, close: () => new Promise<void>((resolve) => server.close(() => resolve())) };
+  // 仅本地 stub 存活期间允许模型测试；调用方把提供商地址指向这个回环端口。
+  const { config } = await import("@aihot/backend/config");
+  const previousModelCalls = config.modelCallsEnabled;
+  config.modelCallsEnabled = true;
+  return { url: `http://127.0.0.1:${port}`, hits: () => hits, close: () => new Promise<void>((resolve) => server.close(() => {
+    config.modelCallsEnabled = previousModelCalls;
+    resolve();
+  })) };
 }
 
 /** A stub answer with its own status (e.g. a provider's 503); anything else is a 200 JSON body. */

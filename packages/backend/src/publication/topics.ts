@@ -1,10 +1,13 @@
+import { DEFAULT_LOCALE, type Locale } from "@aihot/contracts/locale";
+import { localizeArticles } from "./localized.ts";
+import { localizeItemStories } from "./localized-story-report.ts";
 import type { FeedItemSummary } from "@aihot/contracts/site";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { REPO_ROOT } from "../config.ts";
 import { sql } from "../db.ts";
 import { cached } from "../lib/cache.ts";
-import { ITEM_COLUMNS, ITEM_FROM, selectedCondition, toFeedItemSummary, type ItemRow } from "./items.ts";
+import { ITEM_COLUMNS, itemFrom, selectedCondition, toFeedItemSummary, type ItemRow } from "./items.ts";
 
 export interface TopicRow {
   slug: string;
@@ -24,6 +27,29 @@ const topicsCache = cached(
 );
 // Counts may lag by about a minute, like the public directory cache; item reads always check visibility.
 const countsCache = cached(queryTopicCounts, { freshMs: 60_000, maxStaleMs: 10 * 60_000 });
+
+type TopicCopy = { name: string; definition: string };
+type GroupCopy = { name: string; blurb: string };
+const topicPack = JSON.parse(readFileSync(path.join(REPO_ROOT, "industry/topics.json"), "utf8")) as {
+  groups: Array<GroupCopy & { key: "company" | "field" | "genre"; i18n?: Partial<Record<Locale, GroupCopy>> }>;
+  topics: Array<TopicCopy & { slug: string; i18n?: Partial<Record<Locale, TopicCopy>> }>;
+};
+const topicCopy = new Map(topicPack.topics.map((t) => [t.slug, t]));
+
+export function topicGroups(locale: Locale = DEFAULT_LOCALE) {
+  return topicPack.groups.map((group) => {
+    const text = locale === "zh" ? group : group.i18n?.[locale] ?? group.i18n?.en ?? group;
+    return { key: group.key, name: text.name, blurb: text.blurb };
+  });
+}
+
+/** 配置只负责显示文案；数据库里的 slug、标签和中文归类保持原值。 */
+export function localizeTopic<T extends Pick<TopicRow, "slug" | "name" | "definition">>(row: T, locale: Locale): T {
+  if (locale === "zh") return row;
+  const copy = topicCopy.get(row.slug);
+  const translated = copy?.i18n?.[locale] ?? copy?.i18n?.en;
+  return translated ? { ...row, ...translated } : row;
+}
 
 /**
  * The topics (stable slugs, names, definitions, related topics) come from the industry pack
@@ -46,12 +72,12 @@ export async function seedTopics(): Promise<number> {
   return data.topics.length;
 }
 
-export function listTopics(): Promise<TopicRow[]> {
-  return topicsCache.get();
+export async function listTopics(locale: Locale = DEFAULT_LOCALE): Promise<TopicRow[]> {
+  return (await topicsCache.get()).map((row) => localizeTopic(row, locale));
 }
 
-export async function loadTopic(slug: string): Promise<TopicRow | null> {
-  return (await listTopics()).find((t) => t.slug === slug) ?? null;
+export async function loadTopic(slug: string, locale: Locale = DEFAULT_LOCALE): Promise<TopicRow | null> {
+  return (await listTopics(locale)).find((t) => t.slug === slug) ?? null;
 }
 
 /**
@@ -110,8 +136,8 @@ export interface TopicSummary {
   latestAt: string | null;
 }
 
-export async function listTopicSummaries(): Promise<TopicSummary[]> {
-  const topics = await listTopics();
+export async function listTopicSummaries(locale: Locale = DEFAULT_LOCALE): Promise<TopicSummary[]> {
+  const topics = await listTopics(locale);
   const counts = new Map((await topicPageCounts()).map((c) => [c.slug, c]));
   return topics.map((t) => {
     const c = counts.get(t.slug);
@@ -126,10 +152,10 @@ export interface TopicPage {
   pageCount: number;
 }
 
-export async function loadTopicPage(slug: string, page: number, now = new Date()): Promise<TopicPage | null> {
-  const row = await loadTopic(slug);
+export async function loadTopicPage(slug: string, page: number, now = new Date(), locale: Locale = DEFAULT_LOCALE): Promise<TopicPage | null> {
+  const row = await loadTopic(slug, locale);
   if (!row || page < 1) return null;
-  const topics = await listTopicSummaries();
+  const topics = await listTopicSummaries(locale);
   const topic = topics.find((t) => t.slug === slug);
   if (!topic) return null;
   const pageCount = Math.max(1, Math.ceil(topic.total / TOPIC_PAGE_SIZE));
@@ -141,8 +167,8 @@ export async function loadTopicPage(slug: string, page: number, now = new Date()
       WHERE ${selectedCondition(now)} AND p.tags && ${topicMatchTags(row)}::text[]
       ORDER BY p.timeline_at DESC, p.article_id DESC
       LIMIT ${TOPIC_PAGE_SIZE} OFFSET ${(page - 1) * TOPIC_PAGE_SIZE})
-    SELECT ${ITEM_COLUMNS} ${ITEM_FROM} WHERE p.article_id IN (SELECT article_id FROM page)
+    SELECT ${ITEM_COLUMNS} ${itemFrom(locale)} WHERE p.article_id IN (SELECT article_id FROM page)
     ORDER BY p.timeline_at DESC, p.article_id DESC`;
   const related = row.related.map((r) => topics.find((t) => t.slug === r)).filter((t): t is TopicSummary => !!t).map((t) => ({ slug: t.slug, name: t.name }));
-  return { topic: { ...topic, related }, items: rows.map(toFeedItemSummary), page, pageCount };
+  return { topic: { ...topic, related }, items: (await localizeItemStories(await localizeArticles(rows, locale), locale)).map(toFeedItemSummary), page, pageCount };
 }

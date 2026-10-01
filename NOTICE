@@ -13,4 +13,6 @@ This repository also contains third-party material under its own terms:
   them (assets/leaderboard-sources/NOTICE.md).
 
 The demo sources in industry/sources.json are public feeds of their publishers. Their content belongs
-to them; by default the site shows only a summary and a link to the original.
+to them; the site displays full text and includes bodies in full-text RSS by default, with links
+to the originals. Operators can disable site_fulltext / syndicate_fulltext for individual sources.
+For corrections or removal requests, contact the operator through the site feedback page.

@@ -1,3 +1,5 @@
+import { useT } from "../../i18n/index";
+
 import type { ReactNode } from "react";
 
 type Tone = "selected" | "accent" | "amber" | "hot" | "ok" | "neutral";
@@ -23,9 +25,9 @@ export function Badge({ tone = "neutral", dot = false, children, className = "",
 
 /** The "精选" mark on a report. */
 export function SelectedBadge() {
+  const t = useT();
   return (
     <Badge tone="selected" dot>
-      精选
-    </Badge>
+      {t("精选")}</Badge>
   );
 }

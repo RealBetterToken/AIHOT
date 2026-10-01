@@ -36,12 +36,12 @@ export function Select({ className = "", children, ...rest }: SelectHTMLAttribut
   return (
     <span className={`relative inline-flex ${className}`}>
       <select
-        className="h-8 w-full cursor-pointer appearance-none rounded-full border border-line-strong bg-surface py-0 pl-3.5 pr-8 text-[12.5px] text-ink-2 outline-none transition-colors hover:border-ink-4 focus:border-accent"
+        className="h-8 w-full cursor-pointer appearance-none rounded-full border border-line-strong bg-surface py-0 ps-3.5 pe-8 text-[12.5px] text-ink-2 outline-none transition-colors hover:border-ink-4 focus:border-accent"
         {...rest}
       >
         {children}
       </select>
-      <IconChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-4" />
+      <IconChevronDown size={14} className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-ink-4" />
     </span>
   );
 }

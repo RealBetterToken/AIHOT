@@ -1,6 +1,7 @@
 // Publishing: derive the public projection of one article from its material, the latest judgement,
 // manual overrides and grouping, then record selected-set changes in the sync ledger.
 // Rebuilding only re-reads stored results; it never calls a model.
+import { articleSourceHash, localizedSearchText } from "./localized.ts";
 import { SITE } from "@aihot/industry/site";
 import { toPublicApiCategory } from "@aihot/contracts/taxonomy";
 import { config } from "../config.ts";
@@ -167,7 +168,8 @@ export async function publishArticleTx(tx: Tx, articleId: string, options: Publi
     LEFT JOIN stories s ON s.id = f.story_id
     WHERE fa.article_id = ${articleId} AND fa.role IN ('primary', 'report') AND (s.id IS NULL OR s.merged_into IS NULL)
     ORDER BY (fa.role = 'primary') DESC, fa.created_at LIMIT 1`;
-  const [previous] = await tx<PublicationRow[]>`SELECT * FROM publications WHERE article_id = ${articleId}`;
+  // Serialize search text rebuilds with localization writes.
+  const [previous] = await tx<PublicationRow[]>`SELECT * FROM publications WHERE article_id = ${articleId} FOR UPDATE`;
 
   const f = override?.fields ?? {};
   const isChineseTitle = article.language === "zh" || /[一-鿿]/.test(article.title);
@@ -216,8 +218,9 @@ export async function publishArticleTx(tx: Tx, articleId: string, options: Publi
   const indexable = isIndexable({
     visibility, hasSummary: !!summary, selected, seoIndexedAt: previous?.seo_indexed_at ?? null, seoExcludedAt: previous?.seo_excluded_at ?? null,
   });
+  const translatedSearch = await localizedSearchText(tx, articleId, articleSourceHash({ title: title ?? collapseWhitespace(article.title), summary, reason }));
   const searchText = collapseWhitespace(
-    [title, originalTitle, summary, source.name, ...displayTags(tags), ...(analysis?.subjects ?? [])].filter(Boolean).join(" "),
+    [title, originalTitle, summary, source.name, ...displayTags(tags), ...(analysis?.subjects ?? []), translatedSearch].filter(Boolean).join(" "),
   ).toLowerCase();
 
   // A selected item sits at its reading group's anchor: the earliest public pool member of its fact.

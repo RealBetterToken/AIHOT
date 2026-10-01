@@ -91,7 +91,7 @@ export function isTeaser(text: string): boolean {
  */
 function feedText(bodyHtml: string | null, summaryHtml: string, source: SourceRow): Pick<Candidate, "excerpt" | "bodyHtml" | "bodyText" | "bodyStatus"> {
   const bodyText = bodyHtml ? stripTags(bodyHtml) : null;
-  const teaser = !!bodyText && source.participation_mode === "editorial" && isTeaser(bodyText);
+  const teaser = !!bodyText && source.participation_mode === "editorial" && (isTeaser(bodyText) || source.config.fetchPublicContent === true);
   const excerpt = summaryHtml ? collapseWhitespace(stripTags(summaryHtml)).slice(0, 2000) : teaser ? collapseWhitespace(bodyText!) : null;
   return bodyText && bodyText.length > 280 && !teaser
     ? { excerpt, bodyHtml, bodyText, bodyStatus: "ok" }

@@ -1,3 +1,5 @@
+import { useT } from "../../i18n/index";
+
 import { useEffect, useRef, useState } from "react";
 import { IconArrowUp } from "../icons";
 
@@ -18,7 +20,7 @@ export function NavigationProgress({ active }: { active: boolean }) {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-[2px] overflow-hidden" aria-hidden="true">
       <div
-        className="h-full origin-left bg-accent"
+        className="h-full origin-left rtl:origin-right bg-accent"
         style={{
           transform: `scaleX(${visible ? 0.85 : active ? 0 : 1})`,
           opacity: visible ? 1 : 0,
@@ -31,6 +33,7 @@ export function NavigationProgress({ active }: { active: boolean }) {
 
 /** Round "back to top" button once the reader has scrolled a screen or so. */
 export function BackToTop() {
+  const t = useT();
   const [shown, setShown] = useState(false);
   useEffect(() => {
     const onScroll = () => setShown(window.scrollY > window.innerHeight * 1.2);
@@ -41,9 +44,9 @@ export function BackToTop() {
   return (
     <button
       type="button"
-      aria-label="回到顶部"
+      aria-label={t("回到顶部")}
       onClick={() => window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })}
-      className={`fixed bottom-[calc(70px+env(safe-area-inset-bottom))] right-4 z-30 flex size-11 items-center justify-center rounded-full border border-line bg-surface text-ink-2 shadow-[var(--shadow-soft)] transition-all duration-200 hover:text-ink lg:bottom-6 lg:right-6 ${
+      className={`fixed bottom-[calc(70px+env(safe-area-inset-bottom))] end-4 z-30 flex size-11 items-center justify-center rounded-full border border-line bg-surface text-ink-2 shadow-[var(--shadow-soft)] transition-all duration-200 hover:text-ink lg:bottom-6 lg:end-6 ${
         shown ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
       }`}
     >

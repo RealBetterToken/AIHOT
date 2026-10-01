@@ -31,9 +31,9 @@ export async function ingestItems(body: { sourceId?: unknown; sourceName?: unkno
   if (items.length > MAX_ITEMS) throw new IngestError(413, `items[] exceeds max ${MAX_ITEMS} per request`);
 
   const [source] = await sql<{ id: string; participation_mode: string; enabled: boolean }[]>`
-    INSERT INTO sources (id, name, kind, config, tier, participation_mode, interval_minutes, enabled, health, tags)
+    INSERT INTO sources (id, name, kind, config, tier, participation_mode, interval_minutes, enabled, health, tags, site_fulltext, syndicate_fulltext)
     VALUES (${sourceId.slice(0, 120)}, ${typeof body.sourceName === "string" && body.sourceName.trim() ? body.sourceName.trim().slice(0, 200) : sourceId.slice(0, 120)},
-            'external', '{}'::jsonb, 'T2', 'isolated', 1440, true, 'ok', ${["ingest:auto-created"]})
+            'external', '{}'::jsonb, 'T2', 'isolated', 1440, true, 'ok', ${["ingest:auto-created"]}, true, true)
     ON CONFLICT (id) DO UPDATE SET last_ok_at = now()
     RETURNING id, participation_mode, enabled`;
 

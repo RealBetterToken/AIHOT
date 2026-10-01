@@ -28,7 +28,7 @@ export const SITE = {
   /** 对外联系邮箱（选填）：使用规则、llms.txt、响应头里会写。 */
   contactEmail: null as string | null,
   /** 页脚的一行小字（选填）。 */
-  footerNote: "由 AIHOT 开源框架驱动",
+  footerNote: "基于开源框架构建",
   /** 中国大陆网站的 ICP 备案号（选填），填了就显示在页脚并链接到工信部备案系统。 */
   icp: null as string | null,
   /** 结构化数据里的网站运营者（搜索引擎用）。 */
@@ -74,4 +74,36 @@ export const ABOUT = {
 /** “AI 日报”这类说法：行业词和名词之间，英文词加空格，中文词不加。 */
 export function withSubject(noun: string): string {
   return /[A-Za-z0-9]$/.test(SITE.subject) ? `${SITE.subject} ${noun}` : `${SITE.subject}${noun}`;
+}
+
+/** 本地化只影响读者文案；站名、联系资料与机器接口身份保持现有配置。 */
+export type SiteLocale = "zh" | "ru" | "en";
+const SITE_COPY = {
+  ru: { homeTitle: `${SITE.name} — Новости ИИ · Избранное и ежедневный обзор`, description: "Автоматически следим за сотнями источников, с помощью моделей составляем краткие изложения, оцениваем и отбираем материалы, объединяем публикации об одном событии и каждое утро выпускаем обзор.", tagline: "Новости ИИ, заслуживающие внимания", locale: "ru-RU", footerNote: "Создано на основе открытой платформы" },
+  en: { homeTitle: `${SITE.name} — AI news · Daily picks and briefings`, description: "Automatically follows hundreds of sources, uses models to summarize, score and select stories, groups coverage of the same event, and publishes a briefing every morning.", tagline: "AI news worth following", locale: "en-US", footerNote: "Built on an open-source framework" },
+} as const;
+
+export function getSite(locale: SiteLocale = "zh") {
+  return locale === "zh" ? SITE : { ...SITE, ...SITE_COPY[locale] };
+}
+
+const ABOUT_COPY = {
+  ru: {
+    kicker: `О ${SITE.name}`,
+    headline: ["В мире ИИ каждый день что-то новое,", "но внимания заслуживают лишь немногие новости."] as [string, string],
+    lead: `${SITE.name} следит за {sources} источниками: собирает, объединяет, оценивает и отбирает материалы, выпуская обзор каждый день в 08:00 по пекинскому времени. Бесплатно, без регистрации.`,
+    steps: { collect: "Следим за официальными блогами, СМИ, аккаунтами X, публичными аккаунтами WeChat и лентами подписок; активные источники проверяем каждые 15 минут.", store: "Сохраняем всё собранное и объединяем публикации об одном событии; учитываем и аккаунты, используемые только для оценки интереса. На этих данных строится рейтинг событий.", select: "Модель сначала проверяет связь с отраслью и наличие полезной информации, затем пишет китайский заголовок, краткое изложение и обоснование выбора; реклама и повторные репосты не проходят.", publish: "Ежедневный обзор выходит в 08:00, недельный — по понедельникам, месячный — первого числа; лучшие материалы можно отправлять в группу Feishu." },
+    copyright: `${SITE.name} — агрегатор кратких изложений и указатель для чтения; права на оригиналы принадлежат их источникам. Если вы представляете источник и хотите исправить, удалить или изменить показ материала, свяжитесь с нами через`,
+  },
+  en: {
+    kicker: `About ${SITE.name}`,
+    headline: ["AI news arrives every day,", "only a few stories deserve your attention."] as [string, string],
+    lead: `${SITE.name} follows {sources} sources for you: collecting, grouping, scoring and selecting stories, with a daily briefing at 08:00 Beijing time. Free, no registration required.`,
+    steps: { collect: "We follow official blogs, media, X accounts, WeChat public accounts and subscription feeds; active sources are checked every 15 minutes.", store: "Everything collected is saved and coverage of the same event is grouped together; accounts used only to measure interest are included too. These records power the trending chart.", select: "A model checks whether a story belongs to the industry and contains useful information, then writes a Chinese headline, summary and recommendation; marketing copy and duplicate reposts are excluded.", publish: "Daily briefings appear at 08:00, weekly reviews on Mondays and monthly reviews on the first day of the month; the best picks can also be sent to a Feishu group." },
+    copyright: `${SITE.name} aggregates summaries and provides a reading index; copyright in original articles belongs to their sources. If you represent a source and would like a correction, removal or display change, contact us through the`,
+  },
+} as const;
+
+export function getAbout(locale: SiteLocale = "zh") {
+  return locale === "zh" ? ABOUT : { ...ABOUT, ...ABOUT_COPY[locale] };
 }

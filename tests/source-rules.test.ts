@@ -137,3 +137,18 @@ test("detail HTML supplies the ordinary extracted body once, while short pages k
   assert.equal(await extractArticleBody(full!.id, false), "skipped");
   assert.equal(pageReads.get(`/p/b-${T}`), 1, "known listings and extraction never download the same confirmed body again");
 });
+
+test("未配置可选 Jina 时，短正文标记为未确认且不产生付费请求", async () => {
+  const [article] = await sql<{ id: string }[]>`SELECT id FROM articles WHERE source_id = ${id("detail")} AND body_status = 'pending'`;
+  assert.ok(article);
+  const key = process.env.JINA_API_KEY;
+  const reads = jinaDetailReads;
+  const [before] = await sql`SELECT count(*)::int AS n FROM receipts WHERE service = 'jina'`;
+  delete process.env.JINA_API_KEY;
+  try {
+    assert.equal(await extractArticleBody(article.id), "unconfirmed");
+    assert.equal((await sql`SELECT body_status FROM articles WHERE id = ${article.id}`)[0]!.body_status, "unconfirmed");
+    assert.equal(jinaDetailReads, reads);
+    assert.equal((await sql`SELECT count(*)::int AS n FROM receipts WHERE service = 'jina'`)[0]!.n, before!.n);
+  } finally { process.env.JINA_API_KEY = key; }
+});

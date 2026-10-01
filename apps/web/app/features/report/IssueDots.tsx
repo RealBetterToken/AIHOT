@@ -1,3 +1,6 @@
+import { RTL_LOCALES } from "@aihot/contracts/locale";
+import { useLocale } from "../../i18n/index.ts";
+import { localePath } from "../../i18n/locale.ts";
 // The dot grid in the masthead's 报眼, beside the date: one dot per day of the month (dailies), week
 // of the year (weeklies) or month (monthlies). Issues that exist are ink dots, this issue is a larger
 // teal dot in a ring, the rest are faint. Hover names the day and its issue; a click opens it. Drawn
@@ -14,7 +17,8 @@ const INTRO_MS = 700;
 const easeOutBack = (p: number) => 1 + 2.2 * (p - 1) ** 3 + 1.2 * (p - 1) ** 2;
 
 export function IssueDots({ kind, reportKey, index, className = "" }: { kind: ReportKind; reportKey: string; index: ReportNavigationEntry[]; className?: string }) {
-  const grid = useMemo(() => periodGrid(kind, reportKey, index), [kind, reportKey, index]);
+  const locale = useLocale();
+  const grid = useMemo(() => periodGrid(kind, reportKey, index, locale), [kind, reportKey, index, locale]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
   const rows = Math.ceil(grid.cells.length / grid.columns);
@@ -65,7 +69,8 @@ export function IssueDots({ kind, reportKey, index, className = "" }: { kind: Re
         const p = Math.min(1, Math.max(0, t * 1.6 - (i / cells.length) * 0.6));
         if (p <= 0) return;
         const grow = easeOutBack(p) * (i === hovered ? 1.4 : 1);
-        const x = ((i % columns) + 0.5) * cw;
+        const column = RTL_LOCALES.includes(locale) ? columns - 1 - (i % columns) : i % columns;
+        const x = (column + 0.5) * cw;
         const y = (Math.floor(i / columns) + 0.5) * ROW;
         const r = (c.state === "current" ? 0.26 : c.state === "issue" ? 0.17 : 0.08) * unit * grow;
         ctx.fillStyle = c.state === "current" ? colors.accent : c.state === "issue" ? colors.ink : colors.idle;
@@ -90,7 +95,8 @@ export function IssueDots({ kind, reportKey, index, className = "" }: { kind: Re
 
     const cellAt = (e: PointerEvent | MouseEvent) => {
       const box = canvas.getBoundingClientRect();
-      const col = Math.floor((e.clientX - box.left) / cw);
+      const physicalColumn = Math.floor((e.clientX - box.left) / cw);
+      const col = RTL_LOCALES.includes(locale) ? columns - 1 - physicalColumn : physicalColumn;
       const row = Math.floor((e.clientY - box.top) / ROW);
       const i = row * columns + col;
       return col >= 0 && col < columns && i >= 0 && i < cells.length ? i : -1;
@@ -114,7 +120,7 @@ export function IssueDots({ kind, reportKey, index, className = "" }: { kind: Re
     };
     const onClick = (e: MouseEvent) => {
       const c = cells[cellAt(e)];
-      if (c?.key && c.state === "issue") navigate(`${KIND_PATH[kind]}/${c.key}`);
+      if (c?.key && c.state === "issue") navigate(localePath(`${KIND_PATH[kind]}/${c.key}`, locale));
     };
 
     const resize = new ResizeObserver(() => {
@@ -148,7 +154,7 @@ export function IssueDots({ kind, reportKey, index, className = "" }: { kind: Re
       canvas.removeEventListener("pointerleave", onLeave);
       canvas.removeEventListener("click", onClick);
     };
-  }, [grid, rows, kind, navigate]);
+  }, [grid, rows, kind, navigate, locale]);
 
   return (
     <div className={className}>

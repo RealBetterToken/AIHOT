@@ -1,4 +1,5 @@
 // Shared HTTP helpers: Problem JSON, public API headers, ETag / 304, strict query parsing.
+import { DEFAULT_LOCALE, isLocale, type Locale } from "@aihot/contracts/locale";
 import { createHash, randomUUID } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { NO_STORE, PUBLIC_API_CORS } from "@aihot/contracts/http-policy";
@@ -97,6 +98,12 @@ export function sendTextWithEtag(req: FastifyRequest, reply: FastifyReply, text:
 }
 
 export class QueryError extends Error {}
+
+export function localeParam(value: string | undefined): Locale {
+  if (value === undefined) return DEFAULT_LOCALE;
+  if (!isLocale(value)) throw new QueryError("lang must be one of: zh, ru, en.");
+  return value;
+}
 
 /**
  * Strict query parsing for public APIs: only declared parameters, each at most once.

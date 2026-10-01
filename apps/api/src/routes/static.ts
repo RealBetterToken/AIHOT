@@ -1,5 +1,6 @@
 // Discovery and static files: sitemap, llms.txt, robots, security.txt, the web manifest, the OpenAPI
 // document, icons, the IndexNow key, leaderboard logos and the about page's contact codes.
+import { LOCALES } from "@aihot/contracts/locale";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
@@ -94,7 +95,7 @@ async function openApiJson(): Promise<string> {
     .replaceAll("{{siteName}}", SITE.name)
     .replaceAll("{{siteUrl}}", config.siteUrl)
     .replaceAll("{{categoryList}}", CATEGORY_KEYS.join(", "));
-  const doc = JSON.parse(raw) as { paths: Record<string, unknown>; components?: { parameters?: Record<string, { schema?: { enum?: string[] } }> } };
+  const doc = JSON.parse(raw) as { paths: Record<string, { get?: { parameters?: unknown[] } }>; components: { parameters: Record<string, unknown> } };
   // Categories follow the industry pack.
   const walk = (node: unknown) => {
     if (!node || typeof node !== "object") return;
@@ -103,6 +104,10 @@ async function openApiJson(): Promise<string> {
     for (const v of Object.values(o)) walk(v);
   };
   walk(doc);
+  doc.components.parameters.lang = { name: "lang", in: "query", required: false, description: "Reader language for article cards, stories and reports; falls back to English, then Chinese.", schema: { type: "string", enum: [...LOCALES], default: "zh" } };
+  for (const p of ["/api/v1/items", "/api/v1/selected/snapshot", "/api/v1/selected/changes", "/api/v1/stories/{publicId}", "/api/v1/hot-topics", "/api/v1/dailies", "/api/v1/dailies/latest", "/api/v1/dailies/{date}"]) {
+    (doc.paths[p]!.get!.parameters ??= []).push({ $ref: "#/components/parameters/lang" });
+  }
   if (!FEATURES.codexResetMonitor) for (const p of Object.keys(doc.paths)) if (p.startsWith("/api/v1/codex-resets")) delete doc.paths[p];
   openApi = JSON.stringify(doc, null, 2);
   return openApi;

@@ -3,6 +3,7 @@
 import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
 import { sql } from "../db.ts";
+import { credential } from "../config.ts";
 import { guardedFetch } from "../lib/http-fetch.ts";
 import { collapseWhitespace, stripTags } from "../lib/text.ts";
 import { jinaRead } from "../providers/jina.ts";
@@ -30,11 +31,24 @@ export function readable(html: string, url: string): ExtractedBody | null {
   } catch {
     // no head
   }
-  const article = new Readability(document as unknown as ConstructorParameters<typeof Readability>[0], { charThreshold: MIN_BODY_CHARS, keepClasses: false }).parse();
-  if (!article?.content) return null;
-  const clean = trimTrailingChrome(sanitizeBody(article.content, url));
+  const page = new URL(url);
+  // 空讨论页只有标题、导航和登录入口，不应被标成已取到全文。
+  if (page.hostname === "news.ycombinator.com" && page.pathname === "/item"
+    && !Array.from<{ textContent: string | null }>(document.querySelectorAll(".toptext, .commtext")).some(node => node.textContent?.trim())) return null;
+  const githubRelease = page.hostname === "github.com" && /^\/[^/]+\/[^/]+\/releases\/tag\//.test(page.pathname);
+  const telegramPost = page.hostname === "t.me" ? /^\/(?:s\/)?([A-Za-z0-9_]+)\/([0-9]+)\/?$/.exec(page.pathname) : null;
+  // 发布说明有明确容器，短说明也是真正正文；通用抽取容易混入标签、下载和反应按钮。
+  let content: string | null | undefined;
+  if (githubRelease) content = document.querySelector('.markdown-body[data-test-selector="body-content"]')?.innerHTML;
+  else if (telegramPost) {
+    const message = document.querySelector(`[data-post="${telegramPost[1]}/${telegramPost[2]}"] .tgme_widget_message_text`);
+    // 嵌入页可能带其他消息，必须匹配原帖；段落包装让正常全文翻译处理换行文本。
+    content = message ? `<p>${message.innerHTML}</p>` : null;
+  } else content = new Readability(document as unknown as ConstructorParameters<typeof Readability>[0], { charThreshold: MIN_BODY_CHARS, keepClasses: false }).parse()?.content;
+  if (!content) return null;
+  const clean = trimTrailingChrome(sanitizeBody(content, url));
   const text = stripTags(clean);
-  if (text.length < MIN_BODY_CHARS) return null;
+  if (text.length < (githubRelease || telegramPost ? 1 : MIN_BODY_CHARS)) return null;
   const images: ExtractedBody["images"] = [];
   for (const m of clean.matchAll(/<img\b[^>]*\bsrc="([^"]+)"[^>]*>/gi)) {
     const w = /\bwidth="(\d+)"/.exec(m[0]);
@@ -70,7 +84,10 @@ function markdownToHtml(md: string): string {
 
 export async function extractFromUrl(url: string, opts: { allowJina: boolean; subject: string }): Promise<ExtractedBody | null> {
   try {
-    const res = await guardedFetch(url, { timeoutMs: 20_000, maxBytes: 6 * 1024 * 1024 });
+    const page = new URL(url);
+    // Telegram 单条消息的普通地址只有预览，公开嵌入页含完整正文，无须付费服务。
+    if (page.hostname === "t.me" && /^\/[A-Za-z0-9_]+\/[0-9]+\/?$/.test(page.pathname)) page.searchParams.set("embed", "1");
+    const res = await guardedFetch(page.href, { timeoutMs: 20_000, maxBytes: 6 * 1024 * 1024 });
     const type = res.headers.get("content-type") ?? "";
     if (res.status === 200 && /html/.test(type)) {
       const got = readable(res.text(), res.url);
@@ -79,7 +96,7 @@ export async function extractFromUrl(url: string, opts: { allowJina: boolean; su
   } catch {
     // fall through to Jina
   }
-  if (!opts.allowJina) return null;
+  if (!opts.allowJina || !credential("collectors", "JINA_API_KEY")) return null;
   try {
     const page = await jinaRead(url, { purpose: "body_fallback", subject: opts.subject });
     const html = trimTrailingChrome(sanitizeBody(markdownToHtml(page.markdown), url));

@@ -1,15 +1,17 @@
-// One report in a feed. Desktop (≥ 961px): a white card beside the time rail. Mobile: a compact row
-// with a divider, the reason in a grey box. One markup, two presentations, as on the original site.
-import { memo } from "react";
-import { Link } from "react-router";
+import { Link } from "../../lib/locale-links";
+
 import { IntentLink } from "../../components/ui/IntentLink";
-import type { GroupInfo, FeedItemSummary, TimelineFilters } from "@aihot/contracts/site";
-import { CATEGORY_LABELS } from "@aihot/contracts/taxonomy";
 import { SelectedBadge } from "../../components/ui/Badge";
 import { ScoreLabel } from "../../components/ui/Score";
 import { MediaThumbs, SourceLine, StarButton } from "./parts";
 import { GroupDevelopments, GroupSources, LatestDevelopment } from "./ReadingGroup";
 import { QuotedLine } from "../item/QuotedPost";
+import { useT, useLocale } from "../../i18n/index";
+import { categoryLabel } from "@aihot/industry/taxonomy";
+import { memo } from "react";
+import type { GroupInfo, FeedItemSummary, TimelineFilters } from "@aihot/contracts/site";
+// One report in a feed. Desktop (≥ 961px): a white card beside the time rail. Mobile: a compact row
+// with a divider, the reason in a grey box. One markup, two presentations, as on the original site.
 
 export interface FeedItemProps {
   item: FeedItemSummary;
@@ -22,6 +24,8 @@ export interface FeedItemProps {
 }
 
 export const FeedItem = memo(function FeedItem({ item, group, filters, read = false, onOpen, showTags = false }: FeedItemProps) {
+  const t = useT();
+  const locale = useLocale();
   const isX = item.channel === "x" && !!item.x;
   const open = () => onOpen?.(item.id);
   const showSources = !!group && (group.additionalSourceCount > 0 || (group.developmentCount <= 1 && group.reportCount > 1));
@@ -37,7 +41,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
             <SelectedBadge />
           </span>
         )}
-        <span className="ml-auto flex shrink-0 items-center gap-1.5 pl-2">
+        <span className="ms-auto flex shrink-0 items-center gap-1.5 ps-2">
           <span className="hidden lg:inline-flex">
             <ScoreLabel score={item.score} />
           </span>
@@ -74,7 +78,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
         <div className="relative z-10 mt-2 hidden flex-wrap gap-x-2.5 gap-y-1 text-[12px] text-ink-4 lg:flex">
           {showTags && item.category && (
             <Link to={`/all?category=${item.category}`} className="hover:text-accent">
-              {CATEGORY_LABELS[item.category]}
+              {categoryLabel(item.category, locale)}
             </Link>
           )}
           {tags.map((t) => (
@@ -88,14 +92,14 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
       {group && <LatestDevelopment group={group} />}
       {(showSources || showDevelopments) && (
         <div className="mt-2 flex flex-wrap items-start gap-x-4 gap-y-1">
-          {showSources && <GroupSources group={group!} filters={filters} parentId={item.id} />}
-          {showDevelopments && <GroupDevelopments group={{ ...group!, story: group!.story! }} filters={filters} parentId={item.id} />}
+          {showSources && <GroupSources key={locale} group={group!} filters={filters} parentId={item.id} />}
+          {showDevelopments && <GroupDevelopments key={locale} group={{ ...group!, story: group!.story! }} filters={filters} parentId={item.id} />}
         </div>
       )}
 
       {item.reason && (
         <div className="mt-2.5 rounded-control bg-bg-sunk px-3 py-2 dark:bg-bg-muted/60 lg:mt-3 lg:rounded-none lg:border-t lg:border-line-soft lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-3 lg:dark:bg-transparent">
-          <p className="line-clamp-2 text-[13px] leading-[1.65] text-ink-3 lg:line-clamp-none lg:leading-[1.75] lg:text-note">推荐理由：{item.reason}</p>
+          <p className="line-clamp-2 text-[13px] leading-[1.65] text-ink-3 lg:line-clamp-none lg:leading-[1.75] lg:text-note">{t("推荐理由：")}{item.reason}</p>
         </div>
       )}
     </article>

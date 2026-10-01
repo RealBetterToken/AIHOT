@@ -1,3 +1,6 @@
+import { RTL_LOCALES } from "@aihot/contracts/locale";
+import { useT, useLocale, createT, translateKnown } from "../../i18n/index.ts";
+import { localeFromPath, localePath, apiPath } from "../../i18n/locale.ts";
 // The about page's river. Every line is one of the site's real sources (hover names it). Lines run in
 // from the left, gather into bundles (many reports of one story), meet the 精选 gate that lets a few
 // bundles through, and the ones that pass turn teal and run into a small newspaper: the day's report.
@@ -290,6 +293,8 @@ export function SignalRiver({
   className?: string;
   children?: ReactNode;
 }) {
+  const t = useT();
+  const locale = useLocale();
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const labelRef = useRef<HTMLDivElement>(null);
@@ -469,7 +474,8 @@ export function SignalRiver({
       n.hidden = !note;
       label.hidden = false;
       const w = label.offsetWidth;
-      const left = Math.min(Math.max(8, x + 14), wrap.clientWidth - w - 8);
+      const physicalX = RTL_LOCALES.includes(locale) ? wrap.clientWidth - x : x;
+      const left = Math.min(Math.max(8, physicalX + 14), wrap.clientWidth - w - 8);
       const top = Math.max(8, y + 16);
       label.style.transform = `translate(${left}px, ${top}px)`;
     };
@@ -477,12 +483,13 @@ export function SignalRiver({
     const onMove = (e: PointerEvent) => {
       if (!L) return;
       const box = wrap.getBoundingClientRect();
-      const x = e.clientX - box.left;
+      const physicalX = e.clientX - box.left;
+      const x = RTL_LOCALES.includes(locale) ? L.w - physicalX : physicalX;
       const y = e.clientY - box.top;
       const p = L.paper;
       if (x >= p.x - 8 && x <= p.x + p.w + 8 && y >= p.y - 8 && y <= p.y + p.h + 8) {
         hover = { s: null, bundle: null, paper: true };
-        place(x, y, withSubject("日报"), "每天 08:00 出刊");
+        place(x, y, withSubject(t("日报")), t("每天 08:00 出刊"));
         redraw();
         return;
       }
@@ -505,13 +512,13 @@ export function SignalRiver({
       const b = L.bundles[s.bundle]!;
       if (x < L.x2) {
         hover = { s: best, bundle: null, paper: false };
-        const kind = s.source ? (KIND[s.source.kind] ?? "信源") : "信源";
-        place(x, y, s.source ? shortSourceName(s.source.name) : "一个信源", s.source?.heatOnly ? `${kind} · 只计入热度` : kind);
+        const kind = s.source ? (translateKnown(locale, KIND[s.source.kind] ?? "信源")) : t("信源");
+        place(x, y, s.source ? shortSourceName(s.source.name) : t("一个信源"), s.source?.heatOnly ? t("{arg0} · 只计入热度", { arg0: kind }) : kind);
       } else {
         hover = { s: null, bundle: s.bundle, paper: false };
-        if (x < L.gate) place(x, y, "同一件事", `${b.n} 个来源的报道合成一条`);
-        else if (b.kept) place(x, y, "进了精选", "有信息量，分数也够");
-        else place(x, y, "没进精选", "信息不够、重复或只是营销");
+        if (x < L.gate) place(x, y, t("同一件事"), t("{arg0} 个来源的报道合成一条", { arg0: b.n }));
+        else if (b.kept) place(x, y, t("进了精选"), t("有信息量，分数也够"));
+        else place(x, y, t("没进精选"), t("信息不够、重复或只是营销"));
       }
       redraw();
     };
@@ -564,11 +571,11 @@ export function SignalRiver({
       wrap.removeEventListener("pointermove", onMove);
       wrap.removeEventListener("pointerleave", onLeave);
     };
-  }, [sources]);
+  }, [sources, t, locale]);
 
   return (
     <div ref={wrapRef} className={`relative ${className}`}>
-      <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 size-full" />
+      <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 size-full rtl:-scale-x-100" />
       <div ref={labelRef} hidden className="pointer-events-none absolute left-0 top-0 z-10 max-w-[240px] rounded-control bg-surface px-2.5 py-1.5 shadow-[0_6px_20px_rgba(0,0,0,0.08)] ring-1 ring-line">
         <div className="truncate text-[12.5px] font-semibold text-ink" />
         <div className="mt-0.5 truncate text-[11.5px] text-ink-4" />

@@ -1,17 +1,19 @@
-// The day-grouped feed (精选 home, topics): a time rail with cards on desktop, dated rows under grey
-// day bars on phones. Keeps its place across back navigation and loads further pages. There is no
-// "new items" prompt: readers refresh for the latest head (feedback #1199).
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigation } from "react-router";
 import { Collapse } from "../../components/ui/Presence";
-import type { TimelineCard, TimelineFilters, TimelineResponse } from "@aihot/contracts/site";
 import { FeedItem } from "./FeedItem";
 import { IconChevronDown } from "../../components/icons";
 import { RingMark } from "../../components/Logo";
 import { EmptyState } from "../../components/ui/Page";
-import { beijingDate, beijingTime, beijingWeekday } from "../../lib/format";
+import { apiPath } from "../../i18n/locale";
+import { useT, useLocale } from "../../i18n/index";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigation } from "react-router";
+import type { TimelineCard, TimelineFilters, TimelineResponse } from "@aihot/contracts/site";
+import { beijingDate, beijingTime, beijingWeekday, displayDate } from "../../lib/format";
 import { markRead, useReadSet } from "../../lib/local-state";
 import { isHydrated, isReload, markHydrated, readSnapshot, restoreAnchor, saveSnapshot } from "./restore";
+// The day-grouped feed (精选 home, topics): a time rail with cards on desktop, dated rows under grey
+// day bars on phones. Keeps its place across back navigation and loads further pages. There is no
+// "new items" prompt: readers refresh for the latest head (feedback #1199).
 
 const AUTO_BATCHES = 3;
 
@@ -37,25 +39,25 @@ function fromResponse(r: TimelineResponse): ListState {
   return { cards: r.cards, nextCursor: r.nextCursor, dayCounts: r.dayCounts, collapsed: [], batches: 1 };
 }
 
-const WEEKDAY_SHORT = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
 /** Sticky day header: a quiet row on desktop, a grey full-width bar on phones. */
 export function DayHeader({ day, today, count, collapsed, onToggle }: { day: string; today: string; count: number | null; collapsed?: boolean; onToggle?: () => void }) {
-  const [, m, d] = day.split("-").map(Number) as [number, number, number];
-  const date = `${m}月${d}日`;
-  const weekday = beijingWeekday(day);
-  const short = WEEKDAY_SHORT[new Date(`${day}T12:00:00+08:00`).getUTCDay()] ?? "";
+  const t = useT();
+  const locale = useLocale();
+  const date = displayDate(day, locale, { month: "numeric", day: "numeric" });
+  const weekday = beijingWeekday(day, locale);
+  const short = displayDate(day, locale, { weekday: "short" });
   return (
     <div className="sticky top-0 z-20 -mx-4 bg-daybar px-4 lg:mx-0 lg:bg-bg lg:px-0">
       {/* Phones: a full-width day bar. */}
       <div className="flex h-9 items-center gap-2 lg:hidden">
-        <span className="text-[14px] font-bold text-ink">{day === today ? "今天" : date}</span>
+        <span className="text-[14px] font-bold text-ink">{day === today ? t("今天") : date}</span>
         {day === today && <span className="text-[12.5px] text-ink-4">{date}</span>}
         <span className="text-[12.5px] text-ink-4">{short}</span>
       </div>
       {/* Desktop: the date ends where the times end, the fold toggle sits on the rail. */}
       <div className="hidden h-11 grid-cols-[64px_22px_minmax(0,1fr)] items-center lg:grid">
-        <button type="button" onClick={onToggle} disabled={!onToggle} className="justify-self-end whitespace-nowrap text-right text-[18px] font-semibold leading-6 text-ink">
+        <button type="button" onClick={onToggle} disabled={!onToggle} className="justify-self-end whitespace-nowrap text-end text-[18px] font-semibold leading-6 text-ink">
           {date}
         </button>
         {onToggle ? (
@@ -63,10 +65,10 @@ export function DayHeader({ day, today, count, collapsed, onToggle }: { day: str
             type="button"
             onClick={onToggle}
             aria-expanded={!collapsed}
-            aria-label={collapsed ? `展开${date}` : `收起${date}`}
+            aria-label={collapsed ? t("展开{date}", { date }) : t("收起{date}", { date })}
             className="grid size-6 place-items-center justify-self-center rounded-full text-ink-4 transition-colors hover:bg-bg-sunk hover:text-ink"
           >
-            <IconChevronDown size={14} className={`transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`} />
+            <IconChevronDown size={14} className={`transition-transform duration-200 ${collapsed ? "-rotate-90 rtl:rotate-90" : ""}`} />
           </button>
         ) : (
           <span />
@@ -76,7 +78,7 @@ export function DayHeader({ day, today, count, collapsed, onToggle }: { day: str
           {count !== null && (
             <>
               {" · "}
-              <span className="num">{count}</span> 条
+              <span className="num">{t("{count} 条", { count })}</span>
             </>
           )}
         </span>
@@ -90,6 +92,7 @@ export function DayHeader({ day, today, count, collapsed, onToggle }: { day: str
  * 1px line from this node's centre to the next one's, so the day reads as one continuous thread.
  */
 export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }: { at: string; children: React.ReactNode; fresh?: boolean; delay?: number; dataKey?: string }) {
+  const locale = useLocale();
   return (
     <li
       data-card-key={dataKey}
@@ -97,11 +100,11 @@ export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }
       style={fresh ? { animationDelay: `${delay}ms` } : undefined}
     >
       <time dateTime={at} className="mono pt-[2px] text-[13px] leading-[18px] text-ink-4 lg:pt-[17px] lg:text-[12.5px] lg:font-semibold lg:leading-6 lg:text-ink-3">
-        {beijingTime(at)}
+        {beijingTime(at, locale)}
       </time>
       <span aria-hidden="true" className="relative hidden lg:block">
-        <span className="absolute -bottom-[41px] left-[10.5px] top-[29px] w-px bg-line-strong group-last/slot:hidden" />
-        <span className="absolute left-[7.5px] top-[25.5px] size-[7px] rounded-full bg-accent shadow-[0_0_0_4px_var(--bg)] transition-transform duration-300 group-hover/slot:scale-[1.15]" />
+        <span className="absolute -bottom-[41px] start-[10.5px] top-[29px] w-px bg-line-strong group-last/slot:hidden" />
+        <span className="absolute start-[7.5px] top-[25.5px] size-[7px] rounded-full bg-accent shadow-[0_0_0_4px_var(--bg)] transition-transform duration-300 group-hover/slot:scale-[1.15]" />
       </span>
       {children}
     </li>
@@ -109,10 +112,12 @@ export function TimelineSlot({ at, children, fresh = false, delay = 0, dataKey }
 }
 
 export function Timeline({ initial, filters }: { initial: TimelineResponse; filters: TimelineFilters }) {
+  const t = useT();
+  const locale = useLocale();
   const location = useLocation();
   const navigation = useNavigation();
   const readSet = useReadSet();
-  const historyKey = location.key;
+  const historyKey = `${locale}:${location.key}`;
 
   // Back navigation (client side): restore synchronously from the snapshot. A full reload restores
   // after hydration so the first client render matches the server HTML.
@@ -133,7 +138,7 @@ export function Timeline({ initial, filters }: { initial: TimelineResponse; filt
   // Filters (i.e. the loader data) changed. A page still loading for the old filters is cancelled, and a
   // response that arrives anyway is dropped (it belongs to another list and cursor). Back or forward to a
   // filter already visited restores what that history entry had loaded and folded; a new one starts over.
-  const filterKey = filterQuery(filters);
+  const filterKey = `${locale}:${filterQuery(filters)}`;
   const lastFilterKey = useRef(filterKey);
   const pageRequest = useRef<AbortController | null>(null);
   useEffect(() => () => pageRequest.current?.abort(), []);
@@ -172,7 +177,7 @@ export function Timeline({ initial, filters }: { initial: TimelineResponse; filt
 
   // Save the snapshot whenever we leave this history entry.
   useEffect(() => {
-    if (navigation.state === "loading" && navigation.location && navigation.location.key !== historyKey) {
+    if (navigation.state === "loading" && navigation.location && `${locale}:${navigation.location.key}` !== historyKey) {
       saveSnapshot(historyKey, stateRef.current);
     }
   }, [navigation.state, navigation.location, historyKey]);
@@ -201,17 +206,18 @@ export function Timeline({ initial, filters }: { initial: TimelineResponse; filt
   const loadMore = useCallback(async () => {
     const s = stateRef.current;
     if (!s.nextCursor || pageRequest.current) return;
-    const key = filterQuery(filters);
+    const query = filterQuery(filters);
+    const key = `${locale}:${query}`;
     const controller = new AbortController();
     pageRequest.current = controller;
     const current = () => lastFilterKey.current === key && !controller.signal.aborted;
     setLoadingMore(true);
     setLoadError(false);
     try {
-      const res = await fetch(`/api/site/timeline?${filterQuery(filters, { cursor: s.nextCursor })}`, { signal: controller.signal });
+      const res = await fetch(apiPath(`/api/site/timeline?${filterQuery(filters, { cursor: s.nextCursor })}`, locale), { signal: controller.signal });
       if (res.status === 400) {
         // Cursor no longer fits: start over from the head.
-        const head = await fetch(`/api/site/timeline?${key}`, { signal: controller.signal });
+        const head = await fetch(apiPath(`/api/site/timeline?${query}`, locale), { signal: controller.signal });
         if (head.ok && current()) setState(fromResponse((await head.json()) as TimelineResponse));
         return;
       }
@@ -238,7 +244,7 @@ export function Timeline({ initial, filters }: { initial: TimelineResponse; filt
         setLoadingMore(false);
       }
     }
-  }, [filters]);
+  }, [filters, locale]);
 
   // Auto-load a few batches when the sentinel nears the viewport, then hand over to a button.
   const sentinel = useRef<HTMLDivElement>(null);
@@ -272,7 +278,7 @@ export function Timeline({ initial, filters }: { initial: TimelineResponse; filt
     <div className="relative">
       {days.length === 0 && (
         <div className="lg:card">
-          <EmptyState title="这个筛选下还没有精选内容">换个类别看看，或者去全部动态里找找。</EmptyState>
+          <EmptyState title={t("这个筛选下还没有精选内容")}>{t("换个类别看看，或者去全部动态里找找。")}</EmptyState>
         </div>
       )}
 
@@ -280,7 +286,7 @@ export function Timeline({ initial, filters }: { initial: TimelineResponse; filt
         const collapsed = state.collapsed.includes(day);
         const count = state.dayCounts[day] ?? cards.length;
         return (
-          <section key={day} aria-label={day} className="lg:mb-1">
+          <section key={day} aria-label={displayDate(day, locale, { month: "long", day: "numeric" })} className="lg:mb-1">
             <DayHeader day={day} today={today} count={count} collapsed={collapsed} onToggle={() => toggleDay(day)} />
             <Collapse open={!collapsed}>
                 <ol className="lg:pt-1">
@@ -307,24 +313,25 @@ export function Timeline({ initial, filters }: { initial: TimelineResponse; filt
 
 /** The foot of a paged list: loading, retry, "加载更多" after a few automatic pages, or the end. */
 export function FeedEnd({ loading, error, hasMore, manual, empty, onMore }: { loading: boolean; error: boolean; hasMore: boolean; manual: boolean; empty: boolean; onMore: () => void }) {
+  const t = useT();
   return (
     <div className="flex justify-center py-6">
       {loading ? (
         <span className="inline-flex items-center gap-2 text-[12.5px] text-ink-4">
-          <RingMark className="size-4 text-accent" spinning /> 正在加载
+          <RingMark className="size-4 text-accent" spinning /> {t("正在加载")}
         </span>
       ) : error ? (
         <button type="button" onClick={onMore} className="h-9 rounded-full border border-hot/30 px-4 text-[13px] text-hot hover:bg-hot-soft">
-          加载失败，点此重试
+          {t("加载失败，点此重试")}
         </button>
       ) : hasMore ? (
         manual && (
           <button type="button" onClick={onMore} className="h-9 rounded-full border border-line-strong bg-surface px-5 text-[13px] font-medium text-ink-2 transition-colors hover:border-ink-4 hover:text-ink">
-            加载更多
+            {t("加载更多")}
           </button>
         )
       ) : (
-        !empty && <span className="text-[12px] text-ink-4">已经到底了</span>
+        !empty && <span className="text-[12px] text-ink-4">{t("已经到底了")}</span>
       )}
     </div>
   );

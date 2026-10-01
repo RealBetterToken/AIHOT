@@ -7,6 +7,7 @@ import { createServer, request as httpRequest } from "node:http";
 import path from "node:path";
 import { createRequestListener } from "@react-router/node";
 import { isApiOwned, resolveRedirect } from "@aihot/contracts/http-policy";
+import { legacyLocation, localeFromPath, localePath, stripLocale } from "./app/i18n/locale.ts";
 
 const PORT = Number(process.env.WEB_PORT || process.env.PORT || 3000);
 const HOST = process.env.WEB_HOST || "127.0.0.1";
@@ -123,10 +124,18 @@ async function handle(req: import("node:http").IncomingMessage, res: import("nod
   const pathname = qi >= 0 ? raw.slice(0, qi) : raw;
   const search = qi >= 0 ? raw.slice(qi) : "";
 
-  const decision = resolveRedirect(pathname, search);
+  const preferenceHeaders = new Headers();
+  for (const name of ["cookie", "accept-language"]) if (req.headers[name]) preferenceHeaders.set(name, String(req.headers[name]));
+  const legacy = !pathname.endsWith(".data") && !isApiOwned(pathname) ? legacyLocation(pathname, search, preferenceHeaders) : null;
+  if (legacy) {
+    res.writeHead(302, { Location: legacy, "Cache-Control": "private, no-store", Vary: "Accept-Language, Cookie" });
+    return res.end();
+  }
+  const bare = stripLocale(pathname);
+  const decision = resolveRedirect(bare, search);
   if (decision) {
     for (const [k, v] of Object.entries(decision.headers)) res.setHeader(k, v);
-    if (decision.location) res.setHeader("Location", decision.location);
+    if (decision.location) res.setHeader("Location", bare !== pathname ? localePath(decision.location, localeFromPath(pathname)) : decision.location);
     res.statusCode = decision.status;
     return res.end(decision.location ? undefined : decision.status === 410 ? "Gone" : "Not found");
   }

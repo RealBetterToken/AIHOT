@@ -1,16 +1,20 @@
 // Reading-group expansions: the reports behind "另有 N 家信源报道" and the developments behind
 // "展开 N 条进展". Members must pass the same visibility, pool eligibility and parent-page filters.
+import { DEFAULT_LOCALE, type Locale } from "@aihot/contracts/locale";
+import { localizeItemStories, localizedStoryTexts } from "./localized-story-report.ts";
+import { localizeArticles } from "./localized.ts";
 import type { CategoryKey, ChannelKey } from "@aihot/contracts/taxonomy";
 import type { DevelopmentsResponse, GroupReportsResponse } from "@aihot/contracts/site";
 import { sql } from "../db.ts";
 import { decodeCursor, encodeCursor, InvalidCursorError, queryBinding } from "../lib/cursor.ts";
 import { shortHash } from "../lib/ids.ts";
 import { proxiedImage } from "../media/imgproxy.ts";
-import { ITEM_COLUMNS, ITEM_FROM, categoryCondition, channelCondition, selectedCondition, tagCondition, toItemSummary, topicCondition, type ItemRow } from "./items.ts";
+import { ITEM_COLUMNS, itemFrom, categoryCondition, channelCondition, selectedCondition, tagCondition, toItemSummary, topicCondition, type ItemRow } from "./items.ts";
 import { pickRepresentative } from "./timeline.ts";
 
 export interface GroupReportsQuery {
   factPublicId: string;
+  locale?: Locale;
   channel: ChannelKey;
   category: CategoryKey | null;
   tag: string | null;
@@ -30,10 +34,10 @@ export async function loadGroupReports(q: GroupReportsQuery, now = new Date()): 
   if (!fact) return { kind: "not_found" };
   const filters = sql`${channelCondition(q.channel)} ${categoryCondition(q.category)} ${tagCondition(q.tag)} ${topicCondition(q.topicTags)}`;
   const members = await sql<{
-    id: string; title: string; summary: string | null; timeline_at: Date; url: string; selected: boolean;
+    id: string; title: string; summary: string | null; reason: string | null; timeline_at: Date; url: string; selected: boolean;
     source_id: string; source_name: string; source_kind: string; first_party: boolean; icon_url: string | null;
   }[]>`
-    SELECT p.article_id AS id, p.title, p.summary, p.timeline_at, p.url, p.selected,
+    SELECT p.article_id AS id, p.title, p.summary, p.reason, p.timeline_at, p.url, p.selected,
            s.id AS source_id, s.name AS source_name, s.kind AS source_kind, p.first_party, s.icon_url
     FROM publications p JOIN sources s ON s.id = p.source_id
     WHERE p.article_id IN (SELECT article_id FROM fact_articles WHERE fact_id = ${fact.id}) AND p.visibility = 'public' AND p.eligible
@@ -60,7 +64,7 @@ export async function loadGroupReports(q: GroupReportsQuery, now = new Date()): 
     body: {
       factId: q.factPublicId,
       revision,
-      reports: page.map((m) => ({
+      reports: (await localizeArticles(page, q.locale ?? DEFAULT_LOCALE)).map((m) => ({
         id: m.id,
         title: m.title,
         summary: m.summary,
@@ -76,6 +80,7 @@ export async function loadGroupReports(q: GroupReportsQuery, now = new Date()): 
 
 export interface DevelopmentsQuery {
   storyPublicId: string;
+  locale?: Locale;
   channel: ChannelKey;
   category: CategoryKey | null;
   tag: string | null;
@@ -140,15 +145,18 @@ export async function loadDevelopments(q: DevelopmentsQuery, now = new Date()): 
   const next = offset + q.take < list.length ? encodeCursor("dv1", { o: offset + q.take, r: revision, b: binding }) : null;
   const page = list.slice(offset, offset + q.take);
   const rows = new Map(page.length ? (await sql<ItemRow[]>`
-    SELECT ${ITEM_COLUMNS} ${ITEM_FROM} WHERE p.article_id IN ${sql(page.map((d) => d.representativeId))}
+    SELECT ${ITEM_COLUMNS} ${itemFrom(q.locale)} WHERE p.article_id IN ${sql(page.map((d) => d.representativeId))}
       AND p.story_id = ${story.id} AND ${selectedCondition(now)} ${filters}`).map((row) => [row.id, row]) : []);
   if (rows.size !== page.length) return { kind: "changed" };
+  const localized = new Map((await localizeItemStories(await localizeArticles([...rows.values()], q.locale ?? DEFAULT_LOCALE), q.locale ?? DEFAULT_LOCALE)).map((row) => [row.id, row]));
+  const translatedStory = (await localizedStoryTexts([story.public_id], q.locale ?? DEFAULT_LOCALE)).get(story.public_id);
+  const factTitles = new Map(translatedStory?.developments.map((f) => [f.public_id, f.title]) ?? []);
   const developments = page.flatMap(({ representativeId, ...development }) => {
-    const row = rows.get(representativeId);
-    return row ? [{ ...development, representative: toItemSummary(row) }] : [];
+    const row = localized.get(representativeId);
+    return row ? [{ ...development, title: factTitles.get(development.factId) ?? development.title, representative: toItemSummary(row) }] : [];
   });
   return {
     kind: "ok",
-    body: { story: { publicId: story.public_id, title: story.title }, revision, developments, nextCursor: next },
+    body: { story: { publicId: story.public_id, title: translatedStory?.title ?? story.title }, revision, developments, nextCursor: next },
   };
 }

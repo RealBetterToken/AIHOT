@@ -1,12 +1,15 @@
 // Stories (events) and the hot ranking through the public read layer. The website sees heat values;
 // v1 / MCP / Skill only see ranks and counts.
+import { DEFAULT_LOCALE, type Locale } from "@aihot/contracts/locale";
+import { localizeArticles } from "./localized.ts";
+import { localizedStoryTexts } from "./localized-story-report.ts";
 import type { HeatPoint, HotResponse, StoryDetail, StoryReportView } from "@aihot/contracts/site";
 import { sql } from "../db.ts";
 import { proxiedImage, proxiedImageSet } from "../media/imgproxy.ts";
-import { latestHotRanking, rankingExtras } from "../events/hot-read.ts";
+import { latestHotRanking, rankingExtras, loadHotStrip as readHotStrip } from "../events/hot-read.ts";
 import { behindSources, sourceClocks } from "../events/hot.ts";
 import { storyStatusFor } from "../events/digest.ts";
-import { itemUrl, storyApiUrl, storyUrl } from "./links.ts";
+import { pageUrl, storyApiUrl } from "./links.ts";
 import { SITE } from "@aihot/industry/site";
 
 export type StoryLookup = { kind: "found"; storyId: number; publicId: string } | { kind: "merged"; target: string } | { kind: "not_found" };
@@ -38,6 +41,7 @@ interface ReportRow {
   id: string;
   title: string;
   summary: string | null;
+  reason: string | null;
   url: string;
   selected: boolean;
   at: Date;
@@ -58,7 +62,7 @@ interface ReportRow {
  */
 async function storyReports(storyId: number, now: Date): Promise<ReportRow[]> {
   return sql<ReportRow[]>`
-    SELECT DISTINCT ON (p.article_id) p.article_id AS id, p.title, p.summary, p.url, p.selected,
+    SELECT DISTINCT ON (p.article_id) p.article_id AS id, p.title, p.summary, p.reason, p.url, p.selected,
       coalesce(p.published_at, p.discovered_at) AS at, s.id AS source_id, s.name AS source_name, s.kind AS source_kind,
       p.first_party, s.icon_url, f.public_id AS fact_public_id, f.id AS fact_id
     FROM facts f JOIN fact_articles fa ON fa.fact_id = f.id JOIN publications p ON p.article_id = fa.article_id
@@ -81,11 +85,11 @@ function reportView(r: ReportRow): StoryReportView {
   };
 }
 
-async function storyContent(storyId: number, now: Date) {
+async function storyContent(storyId: number, now: Date, locale: Locale = DEFAULT_LOCALE) {
   const [s] = await sql<{ public_id: string; title: string; summary: string | null; first_report_at: Date | null; latest_at: Date | null; digest: string | null; digest_updated_at: Date | null; latest: string | null }[]>`
-    SELECT public_id::text, title, summary, first_report_at, latest_at, digest, digest_updated_at, latest FROM stories WHERE id = ${storyId}`;
+    SELECT public_id::text, title, summary, first_report_at, latest_at, digest, digest_updated_at, latest FROM stories WHERE id = ${storyId} AND merged_into IS NULL`;
   if (!s) return null;
-  const reports = await storyReports(storyId, now);
+  const reports = await localizeArticles(await storyReports(storyId, now), locale);
   if (reports.length === 0) return null;
   reports.sort((a, b) => b.at.getTime() - a.at.getTime());
 
@@ -93,29 +97,35 @@ async function storyContent(storyId: number, now: Date) {
   for (const r of reports) byFact.set(r.fact_id, [...(byFact.get(r.fact_id) ?? []), r]);
   const facts = await sql<{ id: number; public_id: string; title: string; occurred_at: Date | null; created_at: Date }[]>`
     SELECT id, public_id, title, occurred_at, created_at FROM facts WHERE story_id = ${storyId}`;
+  const translated = (await localizedStoryTexts([s.public_id], locale)).get(s.public_id);
+  if (translated) Object.assign(s, { title: translated.title, summary: translated.summary, digest: translated.digest, latest: translated.latest });
+  const factTitles = new Map(translated?.developments.map((f) => [f.public_id, f.title]) ?? []);
   const developments = facts
     .filter((f) => byFact.has(f.id))
     .map((f) => {
       const members = byFact.get(f.id)!;
       const rep = [...members].sort((a, b) => Number(b.first_party) - Number(a.first_party) || Number(b.selected) - Number(a.selected) || a.at.getTime() - b.at.getTime())[0]!;
       const first = members.reduce((m, r) => (r.at < m ? r.at : m), members[0]!.at);
-      return { factId: f.public_id, title: f.title, occurredAt: f.occurred_at?.toISOString() ?? null, firstReportAt: first.toISOString(), reportCount: members.length, representative: rep };
+      return { factId: f.public_id, title: factTitles.get(f.public_id) ?? f.title, occurredAt: f.occurred_at?.toISOString() ?? null, firstReportAt: first.toISOString(), reportCount: members.length, representative: rep };
     })
     .sort((a, b) => Date.parse(b.firstReportAt) - Date.parse(a.firstReportAt));
 
   return { s, reports, developments };
 }
 
-async function relatedStories(storyId: number) {
-  return sql<{ public_id: string; title: string; relation: "storyline" | "related"; latest_at: Date | null }[]>`
+async function relatedStories(storyId: number, locale: Locale = DEFAULT_LOCALE) {
+  const rows = await sql<{ public_id: string; title: string; relation: "storyline" | "related"; latest_at: Date | null }[]>`
     SELECT st.public_id::text, st.title, l.relation, st.latest_at FROM story_links l JOIN stories st ON st.id = l.other_id
     WHERE l.story_id = ${storyId} AND st.merged_into IS NULL ORDER BY st.latest_at DESC NULLS LAST LIMIT 8`;
+  const translated = await localizedStoryTexts(rows.map((r) => r.public_id), locale);
+  return rows.map((r) => ({ ...r, title: translated.get(r.public_id)?.title ?? r.title }));
 }
 
-export async function loadStoryDetail(storyId: number, now = new Date()): Promise<StoryDetail | null> {
-  const content = await storyContent(storyId, now);
+export async function loadStoryDetail(storyId: number, now = new Date(), locale: Locale = DEFAULT_LOCALE): Promise<StoryDetail | null> {
+  const content = await storyContent(storyId, now, locale);
   if (!content) return null;
   const { s, reports, developments } = content;
+  const view = reportView;
   const [why] = await sql<{ p48: number; p6: number; r24: number }[]>`
     SELECT count(DISTINCT participant_key) FILTER (WHERE observed_at > ${now}::timestamptz - interval '48 hours') AS p48,
            count(DISTINCT participant_key) FILTER (WHERE observed_at > ${now}::timestamptz - interval '6 hours'
@@ -133,7 +143,7 @@ export async function loadStoryDetail(storyId: number, now = new Date()): Promis
     ? await sql<{ n: number }[]>`SELECT count(*)::int AS n FROM story_signals WHERE story_id = ${storyId} AND source_id = ANY(${behind}::text[])
                                   AND observed_at > ${now}::timestamptz - interval '48 hours' AND observed_at <= ${now}`
     : [{ n: 0 }];
-  const related = await relatedStories(storyId);
+  const related = await relatedStories(storyId, locale);
   const latestAt = s.latest_at ?? reports[0]!.at;
   // Without a digest or a summary of its own, the story opens with its first development's representative report.
   const origin = developments[developments.length - 1]?.representative;
@@ -158,9 +168,9 @@ export async function loadStoryDetail(storyId: number, now = new Date()): Promis
       rank: entry?.rank ?? null,
       heat: entry?.heat ?? null,
     },
-    developments: developments.map((d) => ({ ...d, representative: reportView(d.representative) })),
-    officialReports: reports.filter((r) => r.first_party).slice(0, 12).map(reportView),
-    timeline: reports.slice(0, 100).map(reportView),
+    developments: developments.map((d) => ({ ...d, representative: view(d.representative) })),
+    officialReports: reports.filter((r) => r.first_party).slice(0, 12).map(view),
+    timeline: reports.slice(0, 100).map(view),
     heat: heat.map((h): HeatPoint => ({ hour: h.hour.toISOString(), heat: Number(h.heat), participants: h.participants })),
     related: related.map((r) => ({ publicId: r.public_id, title: r.title, relation: r.relation, latestAt: r.latest_at?.toISOString() ?? null })),
   };
@@ -222,7 +232,15 @@ async function queryHotCovers(entries: Array<{ storyId: number; representativeIt
   return covers;
 }
 
-export async function loadHot(): Promise<HotResponse> {
+/** 首页热点条也经过公开读取层，并按事件快照取标题。 */
+export async function loadHotStrip(locale: Locale = DEFAULT_LOCALE) {
+  const entries = await readHotStrip();
+  if (!entries) return null;
+  const translated = await localizedStoryTexts(entries.flatMap((e) => e.storyPublicId ? [e.storyPublicId] : []), locale);
+  return entries.map((entry) => ({ ...entry, title: (entry.storyPublicId && translated.get(entry.storyPublicId)?.title) || entry.title }));
+}
+
+export async function loadHot(locale: Locale = DEFAULT_LOCALE): Promise<HotResponse> {
   const ranking = await latestHotRanking();
   if (!ranking) return { computedAt: null, ruleVersion: null, windowHours: 48, entries: [] };
   const at = new Date(ranking.computedAt);
@@ -234,6 +252,7 @@ export async function loadHot(): Promise<HotResponse> {
     hotCovers(ranking.id, ranking.entries, at),
     rankingExtras(ranking),
   ]);
+  const translated = await localizedStoryTexts(ranking.entries.map((e) => e.storyPublicId), locale);
   return {
     computedAt: ranking.computedAt,
     ruleVersion: ranking.ruleVersion,
@@ -241,10 +260,11 @@ export async function loadHot(): Promise<HotResponse> {
     entries: ranking.entries.map((e) => {
       const picture = covers.get(e.storyId);
       const coverUrl = picture ? proxiedImage(picture.url, "full") : null;
-      const text = extras.text(e);
+      const fields = translated.get(e.storyPublicId);
+      const text = fields ? { summary: fields.digest ?? fields.summary, latest: fields.latest } : extras.text(e);
       return {
         rank: e.rank,
-        story: { publicId: e.storyPublicId, title: e.title },
+        story: { publicId: e.storyPublicId, title: fields?.title ?? e.title },
         heat: e.heat,
         trend: e.trend,
         trendPct: e.trendPct,
@@ -271,17 +291,18 @@ export async function loadHot(): Promise<HotResponse> {
 // v1 shapes (ranks and counts only; no heat values)
 // ---------------------------------------------------------------------------
 
-export async function v1HotTopics() {
+export async function v1HotTopics(locale: Locale = DEFAULT_LOCALE) {
   const ranking = await latestHotRanking();
+  const translated = await localizedStoryTexts((ranking?.entries ?? []).map((e) => e.storyPublicId), locale);
   const items = (ranking?.entries ?? []).map((e) => ({
     rank: e.rank,
     id: e.representativeItemId ?? e.storyPublicId,
-    title: e.title,
+    title: translated.get(e.storyPublicId)?.title ?? e.title,
     source: { name: e.representativeSource ?? e.sourceNames[0] ?? SITE.name },
     links: {
-      aihot: e.representativeItemId ? itemUrl(e.representativeItemId) : storyUrl(e.storyPublicId),
-      original: e.representativeUrl ?? storyUrl(e.storyPublicId),
-      story: storyUrl(e.storyPublicId),
+      aihot: e.representativeItemId ? pageUrl(`/items/${e.representativeItemId}`, locale) : pageUrl(`/story/${e.storyPublicId}`, locale),
+      original: e.representativeUrl ?? pageUrl(`/story/${e.storyPublicId}`, locale),
+      story: pageUrl(`/story/${e.storyPublicId}`, locale),
     },
     sourceCount: e.sourceCount,
     signalCount: e.signalCount,
@@ -292,13 +313,13 @@ export async function v1HotTopics() {
   return { schemaVersion: 1 as const, count: items.length, items };
 }
 
-export async function v1Story(storyId: number) {
+export async function v1Story(storyId: number, locale: Locale = DEFAULT_LOCALE) {
   const now = new Date();
-  const content = await storyContent(storyId, now);
+  const content = await storyContent(storyId, now, locale);
   if (!content) return null;
   const { s, reports, developments } = content;
   const latestAt = s.latest_at ?? reports[0]!.at;
-  const neighbors = (await relatedStories(storyId)).map((r) => ({ publicId: r.public_id, title: r.title, relation: r.relation, links: { aihot: storyUrl(r.public_id), api: storyApiUrl(r.public_id) } }));
+  const neighbors = (await relatedStories(storyId, locale)).map((r) => ({ publicId: r.public_id, title: r.title, relation: r.relation, links: { aihot: pageUrl(`/story/${r.public_id}`, locale), api: `${storyApiUrl(r.public_id)}${locale === "zh" ? "" : `?lang=${locale}`}` } }));
   return {
     schemaVersion: 1 as const,
     story: {
@@ -312,14 +333,14 @@ export async function v1Story(storyId: number) {
       latest: s.latest ?? developments[0]?.title ?? s.title,
       digest: s.digest,
       digestUpdatedAt: s.digest_updated_at?.toISOString() ?? null,
-      links: { aihot: storyUrl(s.public_id) },
+      links: { aihot: pageUrl(`/story/${s.public_id}`, locale) },
       reports: reports.slice(0, 50).map((r) => ({
         id: r.id,
         title: r.title,
         summary: r.summary,
         source: { name: r.source_name, firstParty: r.first_party },
         publishedAt: r.at.toISOString(),
-        links: { aihot: itemUrl(r.id), original: r.url },
+        links: { aihot: pageUrl(`/items/${r.id}`, locale), original: r.url },
       })),
       storyline: neighbors.filter((n) => n.relation === "storyline"),
       related: neighbors.filter((n) => n.relation === "related"),

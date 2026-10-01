@@ -1,5 +1,6 @@
+import { Link } from "../../lib/locale-links";
 import type { ReactNode } from "react";
-import { Link } from "react-router";
+
 import { IconChevronRight } from "../icons";
 
 /**
@@ -36,7 +37,7 @@ export function ArticleLayout({ children, left, right, railTop = "top-6" }: { ch
         <div className="mx-auto max-w-[760px]">{children}</div>
       </div>
       <aside className="hidden lg:block">
-        <div className={`sticky ${railTop} ml-auto max-w-[260px] space-y-8`}>{right}</div>
+        <div className={`sticky ${railTop} ms-auto max-w-[260px] space-y-8`}>{right}</div>
       </aside>
     </div>
   );

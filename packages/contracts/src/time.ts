@@ -24,10 +24,8 @@ export function addDays(date: string, days: number): string {
   return new Date(t).toISOString().slice(0, 10);
 }
 
-const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
-
-export function beijingWeekday(date: string): string {
-  return WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()]!;
+export function beijingWeekday(date: string, locale: "zh" | "ru" | "en" = "zh"): string {
+  return new Intl.DateTimeFormat({ zh: "zh-CN", ru: "ru-RU", en: "en-US" }[locale], { weekday: "long", timeZone: "Asia/Shanghai", calendar: "gregory" }).format(new Date(`${date}T00:00:00+08:00`));
 }
 
 /** ISO week label (e.g. 2026-W38) of a calendar date. */

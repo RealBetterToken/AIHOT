@@ -8,12 +8,12 @@
  * 没归上类的资料在日报里放进第一个 key 为 industry 的类别所在的节（没有就放最后一节）。
  */
 export const CATEGORIES = [
-  { key: "ai-models", label: "模型", section: "模型发布/更新", guide: "新模型、模型版本、权重开放、模型能力与价格变化的发布与评测结果" },
-  { key: "ai-products", label: "产品", section: "产品发布/更新", guide: "AI 产品、功能、应用、工具、API 与平台的发布和更新" },
-  { key: "industry", label: "行业", section: "行业动态", guide: "公司经营、融资并购、人事、合作、诉讼、监管与政策、市场与基础设施" },
-  { key: "paper", label: "论文", section: "论文研究", guide: "研究论文、技术报告、基准与数据集" },
-  { key: "tip", label: "教程", section: "技巧与观点", guide: "教程、实践经验、使用技巧、提示词与工具用法、深度技术讲解" },
-  { key: "opinion", label: "观点", section: "技巧与观点", guide: "人物观点、评论、分析、访谈、现象与趋势讨论" },
+  { key: "tip", label: "实践", section: "实践与教程", guide: "最佳实践、可复现的工作流、教程、CLAUDE.md / AGENTS.md / Skills / Hooks / Subagent 的具体配置、上下文与成本技巧、同一任务下的工具或模型对比实测" },
+  { key: "pitfall", label: "踩坑", section: "问题与事故", guide: "使用 AI 编程工具遇到的问题、bug 与绕过办法、Agent 事故（误删、泄密、提示词注入、账单失控）、失败复盘、供应链与安全事件" },
+  { key: "tools", label: "工具", section: "新工具与 Skill", guide: "值得一用的新工具、新 Skill、新 MCP Server、开源项目与插件，重点是用法和为什么好用" },
+  { key: "opinion", label: "观点", section: "思想与讨论", guide: "资深工程师和工具作者的工程思想、编程方法论、AI 时代软件工程的观点，以及程序员社区正在热议的话题与趋势" },
+  { key: "release", label: "发布", section: "发布与更新", guide: "AI 编程工具、模型和 API 的版本发布、功能上线、价格与额度变化、评测榜单结果" },
+  { key: "industry", label: "行业", section: "行业动态", guide: "公司经营、融资并购、人事、合作、诉讼与监管，以及不属于以上类别的其他动态" },
 ] as const;
 
 /**
@@ -26,29 +26,30 @@ export const ITEM_TYPES = ["model_release", "product_launch", "tool_or_prompt", 
 
 /** 每篇资料的第一个标签必须是这些“分类标签”之一。 */
 export const CATEGORY_TAGS = [
-  "产品更新", "模型发布", "论文/研究", "开源/仓库", "教程/实践", "现象/趋势", "大佬观点", "评测/基准", "安全/对齐", "行业动态", "政策/监管",
-  "非AI/通用工具", "其他",
+  "教程/实践", "问题/踩坑", "工具/Skill", "开源/仓库", "大佬观点", "现象/趋势", "产品更新", "模型发布", "评测/基准", "安全/事故", "论文/研究",
+  "行业动态", "非AI/通用工具", "其他",
 ] as const;
 
 /** 可选的主题标签。 */
 export const TOPIC_TAGS = [
-  "Agent", "编码", "推理", "多模态", "语音", "视频", "图像生成", "RAG", "端侧", "数据/训练", "搜索", "部署/工程", "开源生态", "具身智能", "MCP/工具调用",
+  "工作流", "上下文/记忆", "Skills", "MCP/工具调用", "Hooks/自动化", "多Agent", "测试/验证", "代码评审", "规范驱动", "成本/额度",
+  "本地模型", "开源模型", "CLI/终端", "IDE/编辑器", "Agent",
 ] as const;
 
 /** 可选的实体标签（公司、机构、平台）。 */
-export const ENTITY_TAGS = ["OpenAI", "Anthropic", "DeepSeek", "DeepMind", "Google", "Meta", "Microsoft", "xAI", "Hugging Face", "GitHub", "arXiv"] as const;
+export const ENTITY_TAGS = ["OpenAI", "Anthropic", "DeepSeek", "Google", "Cursor", "GitHub", "Qwen", "Kimi", "智谱", "MiniMax"] as const;
 
 /** 模型常写的近义词，统一成词表里的写法。 */
 export const TAG_SYNONYMS: Readonly<Record<string, string>> = {
-  "教程/玩法": "教程/实践", "技巧/最佳实践": "教程/实践", "合作/生态": "行业动态", "融资/收购": "行业动态", "公司动态": "行业动态",
-  合作: "行业动态", 生态: "行业动态", 融资: "行业动态", 收购: "行业动态", 投资: "行业动态", 并购: "行业动态",
-  政策: "政策/监管", 监管: "政策/监管", 法规: "政策/监管", 安全: "安全/对齐", 对齐: "安全/对齐",
-  论文: "论文/研究", 研究: "论文/研究", paper: "论文/研究", papers: "论文/研究",
+  "教程/玩法": "教程/实践", "技巧/最佳实践": "教程/实践", 教程: "教程/实践", 指南: "教程/实践", 技巧: "教程/实践", 最佳实践: "教程/实践", 实践: "教程/实践", 工作流: "教程/实践",
+  踩坑: "问题/踩坑", 问题: "问题/踩坑", 排障: "问题/踩坑", 故障: "问题/踩坑", 复盘: "问题/踩坑", bug: "问题/踩坑",
+  工具: "工具/Skill", Skill: "工具/Skill", 插件: "工具/Skill", MCP: "工具/Skill",
+  安全: "安全/事故", 事故: "安全/事故", "安全/对齐": "安全/事故",
   "open-source": "开源/仓库", 开源: "开源/仓库", 仓库: "开源/仓库", repo: "开源/仓库",
-  教程: "教程/实践", 玩法: "教程/实践", 指南: "教程/实践", 技巧: "教程/实践", 最佳实践: "教程/实践", 实践: "教程/实践",
-  产品: "产品更新", 更新: "产品更新", 发布: "模型发布", 模型: "模型发布", 趋势: "现象/趋势", 现象: "现象/趋势", 观点: "大佬观点",
-  视频生成: "视频", 非ai: "非AI/通用工具", "non-ai": "非AI/通用工具", 通用工具: "非AI/通用工具", 工程工具: "非AI/通用工具",
-  安全扫描: "非AI/通用工具", devops: "非AI/通用工具", 行业: "行业动态", 动态: "行业动态",
+  论文: "论文/研究", 研究: "论文/研究", paper: "论文/研究", 评测: "评测/基准", 基准: "评测/基准", benchmark: "评测/基准",
+  产品: "产品更新", 更新: "产品更新", 发布: "产品更新", 模型: "模型发布", 趋势: "现象/趋势", 现象: "现象/趋势", 讨论: "现象/趋势", 观点: "大佬观点",
+  合作: "行业动态", 融资: "行业动态", 收购: "行业动态", 投资: "行业动态", 并购: "行业动态", 行业: "行业动态", 动态: "行业动态", 政策: "行业动态", 监管: "行业动态",
+  非ai: "非AI/通用工具", "non-ai": "非AI/通用工具", 通用工具: "非AI/通用工具",
 };
 
 /** 模型漏了分类标签时，按内容类型补一个。 */
@@ -63,18 +64,18 @@ export const CATEGORY_BY_ITEM_TYPE: Readonly<Record<string, string>> = {
 export const ENTITIES: Record<string, { name: string; displayTag: string | null; aliases: string[] }> = {
   openai: { name: "OpenAI", displayTag: "OpenAI", aliases: ["OpenAI", "ChatGPT", "Sora", "Codex", "GPT"] },
   anthropic: { name: "Anthropic", displayTag: "Anthropic", aliases: ["Anthropic", "Claude"] },
-  google: { name: "Google", displayTag: "Google", aliases: ["Google", "DeepMind", "Gemini", "谷歌"] },
+  google: { name: "Google", displayTag: "Google", aliases: ["Google", "DeepMind", "Gemini", "Gemini CLI", "谷歌"] },
   deepseek: { name: "DeepSeek", displayTag: "DeepSeek", aliases: ["DeepSeek", "深度求索"] },
-  qwen: { name: "千问 Qwen", displayTag: null, aliases: ["Qwen", "通义", "阿里"] },
-  kimi: { name: "Kimi / 月之暗面", displayTag: null, aliases: ["Kimi", "月之暗面", "Moonshot"] },
-  minimax: { name: "MiniMax", displayTag: null, aliases: ["MiniMax", "海螺"] },
-  zhipu: { name: "智谱 GLM", displayTag: null, aliases: ["智谱", "GLM", "Z.ai"] },
-  xai: { name: "xAI", displayTag: "xAI", aliases: ["xAI", "Grok"] },
-  meta: { name: "Meta", displayTag: "Meta", aliases: ["Meta", "Llama"] },
-  microsoft: { name: "Microsoft", displayTag: "Microsoft", aliases: ["Microsoft", "微软", "Copilot"] },
+  qwen: { name: "千问 Qwen", displayTag: "Qwen", aliases: ["Qwen", "通义", "阿里"] },
+  kimi: { name: "Kimi / 月之暗面", displayTag: "Kimi", aliases: ["Kimi", "月之暗面", "Moonshot"] },
+  minimax: { name: "MiniMax", displayTag: "MiniMax", aliases: ["MiniMax", "海螺"] },
+  zhipu: { name: "智谱 GLM", displayTag: "智谱", aliases: ["智谱", "GLM", "Z.ai"] },
+  xai: { name: "xAI", displayTag: null, aliases: ["xAI", "Grok"] },
+  meta: { name: "Meta", displayTag: null, aliases: ["Meta", "Llama"] },
+  microsoft: { name: "Microsoft", displayTag: null, aliases: ["Microsoft", "微软", "Copilot"] },
   nvidia: { name: "NVIDIA", displayTag: null, aliases: ["NVIDIA", "英伟达"] },
-  "hugging-face": { name: "Hugging Face", displayTag: "Hugging Face", aliases: ["Hugging Face"] },
-  cursor: { name: "Cursor", displayTag: null, aliases: ["Cursor", "Anysphere"] },
+  "hugging-face": { name: "Hugging Face", displayTag: null, aliases: ["Hugging Face"] },
+  cursor: { name: "Cursor", displayTag: "Cursor", aliases: ["Cursor", "Anysphere"] },
   openrouter: { name: "OpenRouter", displayTag: null, aliases: ["OpenRouter"] },
 };
 
@@ -137,3 +138,18 @@ export const IDENTITY_CONTEXT_ALIASES: ReadonlyArray<{ entityId: string; pattern
   { entityId: "meta", pattern: /@AIatMeta\b/i },
   { entityId: "zhipu", pattern: /\bZhipu(?:\s+AI\b|['’]s\b)/i },
 ];
+
+/** 类别身份不变，显示名称按界面语言切换。 */
+const CATEGORY_COPY = {
+  zh: Object.fromEntries(CATEGORIES.map((category) => [category.key, [category.label, category.section]])),
+  ru: { tip: ["Практика", "Практика и руководства"], pitfall: ["Проблемы", "Проблемы и инциденты"], tools: ["Инструменты", "Новые инструменты и Skills"], opinion: ["Мнения", "Идеи и обсуждения"], release: ["Релизы", "Релизы и обновления"], industry: ["Отрасль", "Новости отрасли"] },
+  en: { tip: ["Practice", "Practice and tutorials"], pitfall: ["Pitfalls", "Problems and incidents"], tools: ["Tools", "New tools and Skills"], opinion: ["Opinion", "Ideas and discussion"], release: ["Releases", "Releases and updates"], industry: ["Industry", "Industry news"] },
+} satisfies Record<"zh" | "ru" | "en", Record<string, readonly string[]>>;
+
+export function categoryLabel(key: string, locale: "zh" | "ru" | "en" = "zh"): string {
+  return (CATEGORY_COPY[locale] as Record<string, readonly string[]>)[key]?.[0] ?? CATEGORIES.find((category) => category.key === key)?.label ?? key;
+}
+
+export function categorySection(key: string, locale: "zh" | "ru" | "en" = "zh"): string {
+  return (CATEGORY_COPY[locale] as Record<string, readonly string[]>)[key]?.[1] ?? CATEGORIES.find((category) => category.key === key)?.section ?? key;
+}

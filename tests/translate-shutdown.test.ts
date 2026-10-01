@@ -47,7 +47,7 @@ before(async () => {
   await sql`INSERT INTO sources (id,name,kind,tier,participation_mode,site_fulltext,next_fetch_at)
     VALUES (${SOURCE},'Translation shutdown','rss','T1','editorial',true,'2100-01-01')`;
 });
-after(async () => { await provider.close(); await stopBoss(); await closeDb(); });
+after(async () => { await sql`UPDATE publications SET selected=false WHERE source_id=${SOURCE}`; await provider.close(); await stopBoss(); await closeDb(); });
 
 for (const misaligned of [false, true]) test(`SIGTERM finishes the sent ${misaligned ? 'misaligned' : 'normal'} batch and resumes from its receipt`, async () => {
   active = { asked: gate(), hold: gate(), calls: 0, misaligned };
@@ -55,8 +55,9 @@ for (const misaligned of [false, true]) test(`SIGTERM finishes the sent ${misali
   const second = misaligned ? `Second paragraph ${T}.` : `Second paragraph ${T}. ${'More English '.repeat(170)}`;
   const { articleId } = await upsertMaterial({ sourceId: SOURCE, url: `https://example.org/translation-shutdown-${T}/${misaligned}`, title: `Shutdown ${T}`, bodyHtml: `<p>${first}</p><p>${second}</p>`, bodyText: first + second, bodyStatus: 'ok', language: 'en', via: 'fetch', publishedAt: new Date(), discoveredAt: new Date(Date.now() + 86_400_000) });
   await sql`INSERT INTO analyses (article_id,input_revision,origin,relevance,category,title_zh,summary_zh,reason_zh,score,selected)
-    VALUES (${articleId},1,'rule','pass','ai-models',${`终止测试${T}`},'摘要','理由',90,true)`;
+    VALUES (${articleId},1,'rule','pass','release',${`终止测试${T}`},'摘要','理由',90,true)`;
   await publishArticle(articleId, { releasedAt: new Date(Date.now() - 60_000) });
+  await sql`UPDATE publications SET selected_ready_at = discovered_at WHERE article_id=${articleId}`;
   const interrupted = runTranslation();
   await Promise.race([active.asked.promise, interrupted.done.then(() => assert.fail('translation ended before a request'))]);
   interrupted.child.kill('SIGTERM');
@@ -68,7 +69,7 @@ for (const misaligned of [false, true]) test(`SIGTERM finishes the sent ${misali
   assert.equal(receiptRows.length, 1);
   assert.equal(receiptRows[0]!.status, 'received');
   assert.ok(receiptRows[0]!.response, 'the paid answer arrived and remains reusable');
-  assert.equal((await sql`SELECT 1 FROM translation_attempts WHERE article_id=${articleId}`).length, 0, 'interruption does not consume attempts or become terminal');
+  assert.equal((await sql`SELECT 1 FROM translation_attempts_lang WHERE article_id=${articleId}`).length, 0, 'interruption does not consume attempts or become terminal');
   assert.equal((await sql`SELECT 1 FROM translations WHERE article_id=${articleId}`).length, 0, 'no partial translation prevents restart');
   const resumed = await runTranslation().done;
   assert.equal(resumed.done[0].status, 'translated');

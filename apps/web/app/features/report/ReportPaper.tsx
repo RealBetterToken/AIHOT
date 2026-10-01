@@ -1,3 +1,6 @@
+import { Link, LocaleAnchor } from "../../lib/locale-links";
+import { useT, useLocale, createT, translateKnown } from "../../i18n/index.ts";
+import { localeFromPath, localePath, apiPath } from "../../i18n/locale.ts";
 // One report with a newspaper's structure in the site's own look: a nameplate with its 报眼 (the box
 // beside it for the issue and date), a band of the issue's figures, the front page (the lead, today's
 // highlights and the page index), then one page per section in two columns, the neighbouring issues
@@ -7,7 +10,7 @@
 // sit in rows of two whose rules run across the page, each story as tall as its neighbour.
 import { SITE } from "@aihot/industry/site";
 import { useState, type ReactNode } from "react";
-import { Link } from "react-router";
+
 import type { ReportCitation, ReportDetail, ReportNavigationEntry } from "@aihot/contracts/site";
 import { shortSourceName } from "../../lib/format";
 import { Badge } from "../../components/ui/Badge";
@@ -17,29 +20,31 @@ import { SourceAvatar } from "../../components/ui/SourceAvatar";
 import { Halftone } from "./Halftone";
 import { Nameplate } from "./Nameplate";
 import { IssueDots } from "./IssueDots";
-import { EDITION, KIND_LABEL, MOTTO, dateLine, dateMark, headline, issueNumber, metricItems, neighbourLabel, reportPath, shortDay } from "./format";
+import { EDITION, KIND_LABEL, MOTTO, dateLine, dateMark, headline, issueNumber, metricItems, neighbourLabel, reportPath, shortDay, issueLabel, reportNumber } from "./format";
 
-const pad = (n: number) => String(n).padStart(2, "0");
+const pad = (n: number, locale: "zh" | "ru" | "en" = "zh") => new Intl.NumberFormat(locale, { minimumIntegerDigits: 2, useGrouping: false }).format(n);
 const keyOf = (c: ReportCitation) => c.itemId ?? c.title;
 const anchorOf = (c: ReportCitation) => (c.itemId ? `r-${c.itemId}` : null);
 const LINK = "inline-flex min-h-7 items-center gap-0.5 font-medium transition-colors hover:text-accent";
 
 function Masthead({ report, index }: { report: ReportDetail; index: ReportNavigationEntry[] }) {
+  const t = useT();
+  const locale = useLocale();
   const issue = issueNumber(index, report.key);
-  const mark = dateMark(report.kind, report.key);
+  const mark = dateMark(report.kind, report.key, locale);
   return (
     <header className="pt-5 lg:pt-0">
       <div className="flex items-center justify-between gap-4 text-[12px] text-ink-4">
-        <span className="num">{dateLine(report.kind, report.key)}</span>
-        <span className="hidden tracking-[0.3em] @[640px]:inline">{MOTTO[report.kind]}</span>
-        <span>{EDITION[report.kind]}</span>
+        <span className="num">{dateLine(report.kind, report.key, locale)}</span>
+        <span className="hidden tracking-[0.3em] @[640px]:inline">{translateKnown(locale, MOTTO[report.kind])}</span>
+        <span>{translateKnown(locale, EDITION[report.kind])}</span>
       </div>
 
       <div className="flex items-stretch justify-between gap-5 py-6 @[880px]:gap-10 @[880px]:py-8">
         <div className="flex min-w-0 flex-col justify-center">
           <h1 id="report-start">
             <span className="sr-only">
-              AI {KIND_LABEL[report.kind]} · {dateLine(report.kind, report.key)}
+              AI {translateKnown(locale, KIND_LABEL[report.kind])} · {dateLine(report.kind, report.key, locale)}
             </span>
             <Nameplate which={report.kind} className="block h-[54px] w-auto @[520px]:h-[74px] @[880px]:h-[98px] @[1040px]:h-[112px]" />
           </h1>
@@ -49,25 +54,25 @@ function Masthead({ report, index }: { report: ReportDetail; index: ReportNaviga
             nameplate's dots, and on wider paper the issue calendar beside them. */}
         <div className="flex shrink-0 items-stretch well rounded-panel">
           <div className="flex w-[112px] flex-col items-center justify-center px-2 py-3 text-center @[880px]:w-[150px] @[880px]:py-4">
-            {issue && <span className="text-[11px] tracking-[0.2em] text-ink-4">第 {issue} 期</span>}
+            {issue && <span className="text-[11px] tracking-[0.2em] text-ink-4">{issueLabel(issue, locale)}</span>}
             <Halftone seed={`${report.kind}-${report.key}-date`} className="num mt-2 whitespace-nowrap text-[44px] font-black leading-[0.95] tracking-[-0.04em] text-ink @[880px]:text-[64px]">
               {mark.figure}
             </Halftone>
             <span className="mt-2 text-[11.5px] text-ink-2">{mark.top}</span>
             <span className="text-[11.5px] text-ink-4">{mark.bottom}</span>
           </div>
-          <IssueDots kind={report.kind} reportKey={report.key} index={index} className="hidden w-[176px] border-l border-line px-4 py-4 @[760px]:block @[880px]:w-[196px]" />
+          <IssueDots kind={report.kind} reportKey={report.key} index={index} className="hidden w-[176px] border-s border-line px-4 py-4 @[760px]:block @[880px]:w-[196px]" />
         </div>
       </div>
 
       <div className="flex flex-wrap items-baseline gap-x-8 gap-y-1.5 border-y border-line-strong py-3">
-        {metricItems(report.metrics).map((m) => (
+        {metricItems(report.metrics, locale).map((m) => (
           <span key={m.unit} className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
-            <span className="num text-[22px] font-bold leading-none tracking-[-0.02em] text-ink @[880px]:text-[24px]">{m.value}</span>
+            <span className="num text-[22px] font-bold leading-none tracking-[-0.02em] text-ink @[880px]:text-[24px]">{reportNumber(m.value, locale)}</span>
             <span className="text-[12px] text-ink-4">{m.unit}</span>
           </span>
         ))}
-        <span className="ml-auto whitespace-nowrap text-[12px] text-ink-4">约 {report.readingMinutes} 分钟读完</span>
+        <span className="ms-auto whitespace-nowrap text-[12px] text-ink-4">{t("约 {count} 分钟读完", { count: report.readingMinutes })}</span>
       </div>
     </header>
   );
@@ -75,11 +80,13 @@ function Masthead({ report, index }: { report: ReportDetail; index: ReportNaviga
 
 /** Source face and name, and the site's 一手 mark when first-hand. */
 function Source({ c, size = 16 }: { c: ReportCitation; size?: number }) {
+  const t = useT();
+  const locale = useLocale();
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5">
       <SourceAvatar name={c.sourceName} iconUrl={c.sourceIconUrl} iconSrcSet={c.sourceIconSrcSet} size={size} />
       <span className="truncate">{shortSourceName(c.sourceName)}</span>
-      {c.firstParty && <Badge tone="accent">一手</Badge>}
+      {c.firstParty && <Badge tone="accent">{t("一手")}</Badge>}
     </span>
   );
 }
@@ -89,20 +96,23 @@ function Source({ c, size = 16 }: { c: ReportCitation; size?: number }) {
  * chose: first-hand first, then the best scored), so there is one place to go.
  */
 function Original({ c, className = "" }: { c: ReportCitation; className?: string }) {
+  const t = useT();
+  const locale = useLocale();
   return (
-    <a href={c.sourceUrl} target="_blank" rel="noopener noreferrer" aria-label={`阅读${shortSourceName(c.sourceName)}原文：${c.title}（新标签页）`} className={`${LINK} text-[12.5px] text-ink-3 ${className}`}>
-      原文 <IconArrowUpRight size={12} />
-    </a>
+    <LocaleAnchor href={c.sourceUrl} target="_blank" rel="noopener noreferrer" aria-label={t("阅读{arg0}原文：{arg1}（新标签页）", { arg0: shortSourceName(c.sourceName), arg1: c.title })} className={`${LINK} text-[12.5px] text-ink-3 ${className}`}>{t("原文")}<IconArrowUpRight size={12} className="rtl:-scale-x-100" />
+    </LocaleAnchor>
   );
 }
 
 /** One story: source, headline, at most four lines of summary, and the original at the foot. */
 function Story({ c, dated, className = "" }: { c: ReportCitation; dated: boolean; className?: string }) {
+  const t = useT();
+  const locale = useLocale();
   return (
     <article id={anchorOf(c) ?? undefined} className={`flex min-w-0 scroll-mt-6 flex-col py-6 ${className}`}>
       <div className="flex items-center gap-2 text-[12px] text-ink-3">
         <Source c={c} />
-        {dated && c.publishedAt && <span className="num ml-auto shrink-0 text-ink-4">{shortDay(c.publishedAt)}</span>}
+        {dated && c.publishedAt && <span className="num ms-auto shrink-0 text-ink-4">{shortDay(c.publishedAt, locale)}</span>}
       </div>
       {c.available ? (
         <>
@@ -122,8 +132,7 @@ function Story({ c, dated, className = "" }: { c: ReportCitation; dated: boolean
         </>
       ) : (
         <p className="mt-3 text-[14px] leading-relaxed text-ink-4">
-          <span className="line-through">{c.title}</span> · 该内容已按来源方要求下架或调整展示方式。
-        </p>
+          <span className="line-through">{c.title}</span>{t("· 该内容已按来源方要求下架或调整展示方式。")}</p>
       )}
     </article>
   );
@@ -134,13 +143,15 @@ function Story({ c, dated, className = "" }: { c: ReportCitation; dated: boolean
  * and one rule under the row across the whole page, even under a single cell.
  */
 export function Rows<T>({ items, children }: { items: T[]; children: (item: T, cell: string) => ReactNode }) {
+  const t = useT();
+  const locale = useLocale();
   const rows: T[][] = [];
   for (let i = 0; i < items.length; i += 2) rows.push(items.slice(i, i + 2));
   return (
     <div>
       {rows.map((row, r) => (
         <div key={r} className="grid border-b border-line @[760px]:grid-cols-2">
-          {row.map((item, i) => children(item, i === 0 ? "@[760px]:pr-10 @[1040px]:pr-12" : "border-t border-line @[760px]:border-l @[760px]:border-t-0 @[760px]:pl-10 @[1040px]:pl-12"))}
+          {row.map((item, i) => children(item, i === 0 ? "@[760px]:pe-10 @[1040px]:pe-12" : "border-t border-line @[760px]:border-s @[760px]:border-t-0 @[760px]:ps-10 @[1040px]:ps-12"))}
         </div>
       ))}
     </div>
@@ -187,6 +198,8 @@ function pagesOf(report: ReportDetail, leadStory: ReportCitation | null): Page[]
  * the lead's own (a weekly or monthly's, from its first highlight) is captioned with its story.
  */
 function LeadPicture({ cover, onError, priority = false, className = "" }: { cover: NonNullable<ReportDetail["cover"]>; onError: () => void; priority?: boolean; className?: string }) {
+  const t = useT();
+  const locale = useLocale();
   const ratio = cover.width && cover.height ? cover.width / cover.height : 16 / 9;
   const shown = ratio >= 1.25 ? Math.min(2, Math.max(1.6, ratio)) : Math.max(0.8, ratio);
   return (
@@ -197,30 +210,32 @@ function LeadPicture({ cover, onError, priority = false, className = "" }: { cov
           width={cover.width ?? undefined} height={cover.height ?? undefined}
           alt="" loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" onError={onError} className="size-full object-cover" />
       </div>
-      {cover.caption && <figcaption className="mt-2.5 line-clamp-2 text-[12.5px] leading-[1.6] text-ink-4">图 · {cover.caption}</figcaption>}
+      {cover.caption && <figcaption className="mt-2.5 line-clamp-2 text-[12.5px] leading-[1.6] text-ink-4">{t("图 ·")}{cover.caption}</figcaption>}
     </figure>
   );
 }
 
 /** The front page: the lead beside a column of today's highlights and the index of pages. */
 function FrontPage({ report, pages, leadStory, count }: { report: ReportDetail; pages: Page[]; leadStory: ReportCitation | null; count: number }) {
+  const t = useT();
+  const locale = useLocale();
   const daily = report.kind === "daily";
   // A picture that fails to load is dropped, and the lead is set as if it had none.
   const [broken, setBroken] = useState<string | null>(null);
   const cover = report.cover && report.cover.url !== broken ? report.cover : null;
   // A landscape picture opens the lead above its headline; a squarer one sits beside the paragraph.
   const wide = !cover?.width || !cover.height || cover.width / cover.height >= 1.25;
-  const title = report.lead?.title ?? leadStory?.title ?? headline(report.kind, report.key, count);
+  const title = report.lead?.title ?? leadStory?.title ?? headline(report.kind, report.key, count, locale);
   const dek = report.lead?.leadParagraph ?? leadStory?.summary ?? report.overview;
   const highlights = report.highlights.filter((h) => !leadStory || keyOf(h) !== keyOf(leadStory)).slice(0, 3);
   const inPage = new Set(pages.flatMap((p) => p.items.map((c) => c.itemId)).filter(Boolean));
-  const period = daily ? "今日" : report.kind === "weekly" ? "本周" : "本月";
-  const index = [...pages.map((p) => ({ id: p.id, label: p.label, n: `${p.items.length} 件` })), ...(report.flashes.length > 0 ? [{ id: "s-flash", label: "快讯", n: `${report.flashes.length} 条` }] : [])];
+  const period = daily ? t("今日") : report.kind === "weekly" ? t("本周") : t("本月");
+  const index = [...pages.map((p) => ({ id: p.id, label: p.label, n: t("{count} 件", { count: p.items.length }) })), ...(report.flashes.length > 0 ? [{ id: "s-flash", label: t("快讯"), n: t("{count} 条", { count: report.flashes.length }) }] : [])];
 
   return (
-    <section aria-label="头版" className="grid @[880px]:grid-cols-[minmax(0,1fr)_300px] @[1040px]:grid-cols-[minmax(0,1fr)_340px]">
-      <div id={leadStory ? (anchorOf(leadStory) ?? undefined) : undefined} className="min-w-0 scroll-mt-6 py-7 @[880px]:border-r @[880px]:border-line @[880px]:py-10 @[880px]:pr-10">
-        <Kicker>{daily ? "头条" : "本期导读"}</Kicker>
+    <section aria-label={t("头版")} className="grid @[880px]:grid-cols-[minmax(0,1fr)_300px] @[1040px]:grid-cols-[minmax(0,1fr)_340px]">
+      <div id={leadStory ? (anchorOf(leadStory) ?? undefined) : undefined} className="min-w-0 scroll-mt-6 py-7 @[880px]:border-e @[880px]:border-line @[880px]:py-10 @[880px]:pe-10">
+        <Kicker>{daily ? t("头条") : t("本期导读")}</Kicker>
         {cover && wide && <LeadPicture cover={cover} onError={() => setBroken(cover.url)} priority className="mt-5" />}
         <h2 className="mt-4 text-[32px] font-black leading-[1.28] tracking-[-0.03em] text-ink [text-wrap:balance] @[520px]:text-[40px] @[1040px]:text-[48px] @[1040px]:leading-[1.22]">
           {leadStory?.itemId ? (
@@ -245,10 +260,10 @@ function FrontPage({ report, pages, leadStory, count }: { report: ReportDetail; 
         )}
       </div>
 
-      <aside className="min-w-0 border-t border-line py-7 @[880px]:border-t-0 @[880px]:py-10 @[880px]:pl-8">
+      <aside className="min-w-0 border-t border-line py-7 @[880px]:border-t-0 @[880px]:py-10 @[880px]:ps-8">
         {highlights.length > 0 && (
           <>
-            <Kicker>{period}看点</Kicker>
+            <Kicker>{translateKnown(locale, daily ? "今日看点" : report.kind === "weekly" ? "本周看点" : "本月看点")}</Kicker>
             <ol className="mt-2">
               {highlights.map((h, i) => {
                 const anchor = anchorOf(h);
@@ -256,7 +271,7 @@ function FrontPage({ report, pages, leadStory, count }: { report: ReportDetail; 
                 return (
                   <li key={keyOf(h)}>
                     <Link to={to} className="group flex gap-3.5 border-b border-line py-4">
-                      <span className="num w-6 shrink-0 text-[26px] font-black leading-[0.95] tracking-[-0.03em] text-accent">{i + 1}</span>
+                      <span className="num w-6 shrink-0 text-[26px] font-black leading-[0.95] tracking-[-0.03em] text-accent">{reportNumber(i + 1, locale)}</span>
                       <span className="min-w-0">
                         <span className="block text-[15px] font-bold leading-[1.55] text-ink transition-colors group-hover:text-accent">{h.title}</span>
                         <span className="mt-1.5 block truncate text-[12px] text-ink-4">{shortSourceName(h.sourceName)}</span>
@@ -269,16 +284,16 @@ function FrontPage({ report, pages, leadStory, count }: { report: ReportDetail; 
           </>
         )}
         {index.length > 0 && (
-          <nav aria-label="本期版面" className={highlights.length > 0 ? "mt-8" : ""}>
-            <Kicker>本期版面</Kicker>
+          <nav aria-label={t("本期版面")} className={highlights.length > 0 ? "mt-8" : ""}>
+            <Kicker>{t("本期版面")}</Kicker>
             <ol className="mt-3">
               {index.map((p, i) => (
                 <li key={p.id}>
-                  <a href={`#${p.id}`} className="group flex items-baseline gap-2 py-1.5 text-[13.5px]">
-                    <span className="num w-7 shrink-0 text-[14px] font-bold text-ink">{pad(i + 1)}</span>
+                  <LocaleAnchor href={`#${p.id}`} className="group flex items-baseline gap-2 py-1.5 text-[13.5px]">
+                    <span className="num w-7 shrink-0 text-[14px] font-bold text-ink">{pad(i + 1, locale)}</span>
                     <span className="min-w-0 flex-1 truncate text-ink-2 transition-colors group-hover:text-accent">{p.label}</span>
                     <span className="num shrink-0 text-[12px] text-ink-4">{p.n}</span>
-                  </a>
+                  </LocaleAnchor>
                 </li>
               ))}
             </ol>
@@ -291,10 +306,12 @@ function FrontPage({ report, pages, leadStory, count }: { report: ReportDetail; 
 
 /** A page of the report: its number in the accent beside its name. */
 export function SectionPage({ id, no, label, children }: { id: string; no?: number; label: string; children: ReactNode }) {
+  const t = useT();
+  const locale = useLocale();
   return (
     <section id={id} aria-labelledby={`${id}-t`} className="scroll-mt-6 pt-12 @[880px]:pt-16">
       <header className="flex items-baseline gap-3 border-b border-line-strong pb-3 @[880px]:gap-4">
-        {no !== undefined && <span className="num text-[26px] font-black leading-none tracking-[-0.03em] text-accent @[880px]:text-[30px]">{pad(no)}</span>}
+        {no !== undefined && <span className="num text-[26px] font-black leading-none tracking-[-0.03em] text-accent @[880px]:text-[30px]">{pad(no, locale)}</span>}
         <h2 id={`${id}-t`} className="min-w-0 text-[24px] font-black leading-[1.25] tracking-[-0.02em] text-ink @[880px]:text-[28px]">
           {label}
         </h2>
@@ -308,15 +325,17 @@ export function SectionPage({ id, no, label, children }: { id: string; no?: numb
 const COLUMNS = "@[760px]:columns-2 @[760px]:gap-x-12 @[760px]:[column-rule:1px_solid_var(--line)]";
 
 function Neighbours({ report, index }: { report: ReportDetail; index: ReportNavigationEntry[] }) {
-  const titleOf = (key: string) => index.find((e) => e.key === key)?.title ?? `AI ${KIND_LABEL[report.kind]} · ${key}`;
+  const t = useT();
+  const locale = useLocale();
+  const titleOf = (key: string) => index.find((e) => e.key === key)?.title ?? `AI ${translateKnown(locale, KIND_LABEL[report.kind])} · ${key}`;
   const cell = "group flex min-w-0 flex-col py-6";
   const title = "mt-2.5 line-clamp-2 text-[16px] font-bold leading-[1.5] text-ink transition-colors group-hover:text-accent @[880px]:text-[18px]";
   return (
-    <nav aria-label={report.kind === "daily" ? "前后日报" : "前后各期"} className="mt-16 grid grid-cols-2 border-y border-line-strong">
+    <nav aria-label={report.kind === "daily" ? t("前后日报") : t("前后各期")} className="mt-16 grid grid-cols-2 border-y border-line-strong">
       {report.prev ? (
-        <Link to={reportPath(report.kind, report.prev)} className={`${cell} pr-5 @[880px]:pr-10`}>
+        <Link to={reportPath(report.kind, report.prev)} className={`${cell} pe-5 @[880px]:pe-10`}>
           <span className="inline-flex items-center gap-1 text-[12px] text-ink-4">
-            <IconArrowLeft size={13} /> {neighbourLabel(report.kind, report.prev, "prev")}
+            <IconArrowLeft size={13} className="rtl:-scale-x-100" /> {neighbourLabel(report.kind, report.prev, "prev", locale)}
           </span>
           <span className={title}>{titleOf(report.prev)}</span>
         </Link>
@@ -324,31 +343,33 @@ function Neighbours({ report, index }: { report: ReportDetail; index: ReportNavi
         <span />
       )}
       {report.next ? (
-        <Link to={reportPath(report.kind, report.next)} className={`${cell} items-end border-l border-line pl-5 text-right @[880px]:pl-10`}>
+        <Link to={reportPath(report.kind, report.next)} className={`${cell} items-end border-s border-line ps-5 text-end @[880px]:ps-10`}>
           <span className="inline-flex items-center gap-1 text-[12px] text-ink-4">
-            {neighbourLabel(report.kind, report.next, "next")} <IconArrowRight size={13} />
+            {neighbourLabel(report.kind, report.next, "next", locale)} <IconArrowRight size={13} className="rtl:-scale-x-100" />
           </span>
           <span className={title}>{titleOf(report.next)}</span>
         </Link>
       ) : (
-        <span className="border-l border-line" />
+        <span className="border-s border-line" />
       )}
     </nav>
   );
 }
 
 function History({ report, index }: { report: ReportDetail; index: ReportNavigationEntry[] }) {
+  const t = useT();
+  const locale = useLocale();
   const others = index.filter((e) => e.key !== report.key).slice(0, 12);
   if (others.length === 0) return null;
   return (
     <section id="report-history" className="scroll-mt-6 pt-12">
-      <Kicker>往期 AI {KIND_LABEL[report.kind]}</Kicker>
+      <Kicker>{t("往期 AI {report}", { report: translateKnown(locale, KIND_LABEL[report.kind]) })}</Kicker>
       <ul className="mt-3">
         {others.map((e) => (
           <li key={e.key}>
             <Link to={reportPath(report.kind, e.key)} className="group flex items-baseline gap-4 border-b border-line py-3">
               <span className="num w-[76px] shrink-0 text-[12.5px] text-ink-4">{e.key}</span>
-              <span className="min-w-0 flex-1 truncate text-[14px] text-ink-2 transition-colors group-hover:text-accent">{e.title ?? `${SITE.name} ${KIND_LABEL[report.kind]} · ${e.key}`}</span>
+              <span className="min-w-0 flex-1 truncate text-[14px] text-ink-2 transition-colors group-hover:text-accent">{e.title ?? `${SITE.name} ${translateKnown(locale, KIND_LABEL[report.kind])} · ${e.key}`}</span>
             </Link>
           </li>
         ))}
@@ -358,15 +379,17 @@ function History({ report, index }: { report: ReportDetail; index: ReportNavigat
 }
 
 export function ReportPaper({ report, index }: { report: ReportDetail; index: ReportNavigationEntry[] }) {
+  const t = useT();
+  const locale = useLocale();
   const daily = report.kind === "daily";
   const leadStory = leadStoryOf(report);
-  const pages = pagesOf(report, leadStory);
+  const pages = pagesOf(report, leadStory).map((page) => ({ ...page, label: translateKnown(locale, page.label) }));
   const count = pages.reduce((sum, p) => sum + p.items.length, 0) + (leadStory ? 1 : 0);
   return (
     <article className="@container">
       <Masthead report={report} index={index} />
       {count === 0 && report.flashes.length === 0 ? (
-        <p className="py-16 text-center text-[14px] text-ink-4">本期没有入选内容。</p>
+        <p className="py-16 text-center text-[14px] text-ink-4">{t("本期没有入选内容。")}</p>
       ) : (
         <FrontPage report={report} pages={pages} leadStory={leadStory} count={count} />
       )}
@@ -375,7 +398,7 @@ export function ReportPaper({ report, index }: { report: ReportDetail; index: Re
         <SectionPage key={p.id} id={p.id} no={i + 1} label={p.label}>
           {p.summary && (
             <p className="border-b border-line py-5 text-[15.5px] leading-[1.9] text-ink-2 @[560px]:text-justify">
-              <span className="mr-2 font-semibold text-accent">本版导读</span>
+              <span className="me-2 font-semibold text-accent">{t("本版导读")}</span>
               {p.summary}
             </p>
           )}
@@ -384,7 +407,7 @@ export function ReportPaper({ report, index }: { report: ReportDetail; index: Re
       ))}
 
       {report.flashes.length > 0 && (
-        <SectionPage id="s-flash" no={pages.length + 1} label="快讯">
+        <SectionPage id="s-flash" no={pages.length + 1} label={t("快讯")}>
           <ul className={`${COLUMNS} @[1040px]:columns-3`}>
             {report.flashes.map((f, i) => (
               <li key={`${keyOf(f)}-${i}`} className="flex break-inside-avoid gap-2.5 border-b border-line py-3 text-[14.5px] leading-[1.65]">
@@ -397,7 +420,7 @@ export function ReportPaper({ report, index }: { report: ReportDetail; index: Re
                   ) : (
                     <span className="text-ink">{f.title}</span>
                   )}
-                  <span className="ml-2 text-[12px] text-ink-4">{shortSourceName(f.sourceName)}</span>
+                  <span className="ms-2 text-[12px] text-ink-4">{shortSourceName(f.sourceName)}</span>
                 </span>
               </li>
             ))}
@@ -408,11 +431,11 @@ export function ReportPaper({ report, index }: { report: ReportDetail; index: Re
       <Neighbours report={report} index={index} />
       {!daily && <History report={report} index={index} />}
       <footer className="py-10 text-center">
-        <div className="text-[13px] font-semibold tracking-[0.6em] text-ink-4">（本期完）</div>
+        <div className="text-[13px] font-semibold tracking-[0.6em] text-ink-4">{t("（本期完）")}</div>
         <p className="mt-3 text-[12px] text-ink-4">
-          {SITE.name} {KIND_LABEL[report.kind]}由编辑系统根据公开来源自动{daily ? "编辑" : "综合"}，每条均附原文 ·{" "}
+          {t("{name} {report}由编辑系统根据公开来源自动编排，每条均附原文。", { name: SITE.name, report: translateKnown(locale, KIND_LABEL[report.kind]) })} ·{" "}
           <Link to={daily ? "/daily/archive" : "#report-history"} className="font-medium text-ink-3 transition-colors hover:text-accent">
-            {daily ? "日报合订本" : `往期${KIND_LABEL[report.kind]}`}
+            {daily ? t("日报合订本") : t("往期{arg0}", { arg0: translateKnown(locale, KIND_LABEL[report.kind]) })}
           </Link>
         </p>
       </footer>

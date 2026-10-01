@@ -53,7 +53,7 @@ const material = (price: string) =>
 async function detail(id: string) {
   const res = await app.inject({ method: "GET", url: `/api/site/items/${id}` });
   assert.equal(res.statusCode, 200);
-  return JSON.parse(res.body) as { body: { zh: string | null; original: string | null; complete: boolean } };
+  return JSON.parse(res.body) as { body: { localized: string | null; original: string | null; complete: boolean } };
 }
 
 before(async () => {
@@ -70,8 +70,9 @@ after(async () => {
 test("a text corrected while its translation was running is translated again, and the old translation is not shown", async () => {
   const { articleId: id } = await material("ten");
   await sql`INSERT INTO analyses (article_id, input_revision, origin, relevance, category, title_zh, summary_zh, reason_zh, score, selected)
-            VALUES (${id}, 1, 'rule', 'pass', 'ai-models', ${`价格更新-${T}`}, '摘要', '理由', 90, true)`;
+            VALUES (${id}, 1, 'rule', 'pass', 'release', ${`价格更新-${T}`}, '摘要', '理由', 90, true)`;
   await publishArticle(id, { releasedAt: new Date(Date.now() - 60_000) });
+  await sql`UPDATE publications SET selected_ready_at = discovered_at WHERE article_id=${id}`;
 
   // The model is asked about revision 1; the source corrects the price before it answers.
   hold = gate();
@@ -83,17 +84,17 @@ test("a text corrected while its translation was running is translated again, an
   hold = null;
   await running;
 
-  const [attempt] = await sql<{ revision: number; outcome: string }[]>`SELECT revision, outcome FROM translation_attempts WHERE article_id = ${id}`;
+  const [attempt] = await sql<{ revision: number; outcome: string }[]>`SELECT revision, outcome FROM translation_attempts_lang WHERE lang = 'zh' AND article_id = ${id}`;
   assert.deepEqual({ ...attempt }, { revision: 1, outcome: "translated" }, "the attempt is booked on the revision translated");
   const stale = await detail(id);
-  assert.equal(stale.body.zh, null, "a translation of the old wording is not shown");
+  assert.equal(stale.body.localized, null, "a translation of the old wording is not shown");
   assert.ok(stale.body.original?.includes("twenty"));
 
   await translatePending({ limit: 1 });
   const [tr] = await sql<{ revision: number }[]>`SELECT revision FROM translations WHERE article_id = ${id}`;
   assert.equal(tr?.revision, 2, "the corrected text is translated on the next run");
   const current = await detail(id);
-  assert.ok(current.body.zh?.includes("二十美元") && current.body.complete, "the page shows the translation of the corrected text");
+  assert.ok(current.body.localized?.includes("二十美元") && current.body.complete, "the page shows the translation of the corrected text");
 });
 
 test("links and images inside a paragraph survive the translation, or the paragraph stays in the original", async () => {
@@ -105,8 +106,9 @@ test("links and images inside a paragraph survive the translation, or the paragr
     bodyStatus: "ok", via: "fetch", publishedAt: new Date(), discoveredAt: new Date(Date.now() + 1_200_000),
   });
   await sql`INSERT INTO analyses (article_id, input_revision, origin, relevance, category, title_zh, summary_zh, reason_zh, score, selected)
-            VALUES (${id}, 1, 'rule', 'pass', 'ai-models', ${`链接-${T}`}, '摘要', '理由', 90, true)`;
+            VALUES (${id}, 1, 'rule', 'pass', 'release', ${`链接-${T}`}, '摘要', '理由', 90, true)`;
   await publishArticle(id, { releasedAt: new Date(Date.now() - 60_000) });
+  await sql`UPDATE publications SET selected_ready_at = discovered_at WHERE article_id=${id}`;
   await translatePending({ limit: 1 });
   const [tr] = await sql<{ body_html: string; complete: boolean }[]>`SELECT body_html, complete FROM translations WHERE article_id = ${id}`;
   assert.ok(tr!.body_html.includes('<a href="https://neuroglancer.dev/docs">Neuroglancer</a>'), tr!.body_html);
@@ -123,16 +125,17 @@ test("the post a selected X post quotes is translated once and shown with the it
     xPost: { tweetId: `8${Date.now()}`, authorName: "Boris", handle: "bcherny", text: "Try it!", quoted: { authorName: "Anthropic", handle: "AnthropicAI", text: `Introducing Claude Sonnet 5.5 ${T}`, url: `https://x.com/AnthropicAI/status/${tweetId}` } },
   });
   await sql`INSERT INTO analyses (article_id, input_revision, origin, relevance, category, title_zh, summary_zh, reason_zh, score, selected)
-            VALUES (${id}, 1, 'rule', 'pass', 'ai-models', ${`引用-${T}`}, '摘要', '理由', 90, true)`;
+            VALUES (${id}, 1, 'rule', 'pass', 'release', ${`引用-${T}`}, '摘要', '理由', 90, true)`;
   await publishArticle(id, { releasedAt: new Date(Date.now() - 60_000) });
+  await sql`UPDATE publications SET selected_ready_at = discovered_at WHERE article_id=${id}`;
   const run = await translatePending({ limit: 1 });
   assert.ok(run.quotes >= 1);
-  const [q] = await sql<{ text_zh: string; origin: string }[]>`SELECT text_zh, origin FROM quote_translations WHERE tweet_id = ${tweetId}`;
+  const [q] = await sql<{ text_zh: string; origin: string }[]>`SELECT text AS text_zh, origin FROM quote_translations_lang WHERE lang = 'zh' AND tweet_id = ${tweetId}`;
   assert.deepEqual({ ...q }, { text_zh: "隆重推出 Sonnet 5.5。", origin: "model" });
   const res = await app.inject({ method: "GET", url: `/api/site/items/${id}` });
   const item = JSON.parse(res.body) as { x: { quoted: { text: string; translation: string | null } } };
   assert.deepEqual([item.x.quoted.text, item.x.quoted.translation], [`Introducing Claude Sonnet 5.5 ${T}`, "隆重推出 Sonnet 5.5。"]);
   await translatePending({ limit: 1 });
-  const receipts = await sql`SELECT 1 FROM receipts WHERE purpose = 'translate_quoted' AND subject = ${`quote:${tweetId}`}`;
+  const receipts = await sql`SELECT 1 FROM receipts WHERE purpose = 'translate_quoted' AND subject = ${`quote:${tweetId}:zh`}`;
   assert.equal(receipts.length, 1, "translated once");
 });

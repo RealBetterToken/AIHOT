@@ -30,7 +30,7 @@
 - 读者打开页面不触发模型调用；模型只在 worker 的任务里调用。
 - 付费请求都经过回执（`providers/receipts.ts`）和预算熔断，不要绕开。
 - 开发和测试时保持安全阀关闭：`COLLECT_ENABLED`、`MODEL_CALLS_ENABLED`、`FEISHU_*_ENABLED`、`INDEXNOW_SUBMIT_ENABLED`。测试不访问任何外部服务。
-- 信源默认只展示摘要和原文链接（`site_fulltext` 关）；只有来源明确允许时才打开全文。
+- 信源默认在站内展示全文；如个别来源不允许转载，可在后台对该信源关闭 `site_fulltext` / `syndicate_fulltext`。
 - 公开内容匿名，管理员和访客看到的一样；后台只允许管理员。
 - 数据库迁移只做向后兼容的增量，新迁移按编号加在 `database/migrations/` 末尾。
 - 不要提交 `.env`、密钥和 `.data/`。

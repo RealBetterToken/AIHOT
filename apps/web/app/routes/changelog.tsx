@@ -1,6 +1,10 @@
+import { beijingTime } from "../lib/format";
+import { Link, LocaleAnchor } from "../lib/locale-links";
+import { useT, useLocale, createT, translateKnown } from "../i18n/index.ts";
+import { localeFromPath, localePath, apiPath } from "../i18n/locale.ts";
 import { SITE, withSubject } from "@aihot/industry/site";
 import { Fragment, useEffect, useState } from "react";
-import { Link, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { apiGet } from "../lib/api.server";
 import { pageMeta } from "../lib/seo";
 import { setChangelogSeen } from "../lib/local-state";
@@ -22,11 +26,13 @@ interface Release {
 }
 
 export async function loader({ request }: { request: Request }) {
-  return apiGet<{ latestVersion: string; releases: Release[] }>("/api/site/changelog", { signal: request.signal });
+  return apiGet<{ latestVersion: string; releases: Release[] }>("/api/site/changelog", { request, signal: request.signal });
 }
 
-export function meta() {
-  return pageMeta({ title: "更新日志", description: `${SITE.name} 的功能更新、优化、公告与下线记录。`, path: "/changelog", image: "/og/pages/changelog.png" });
+export function meta({ location }: { location: { pathname: string } }) {
+  const locale = localeFromPath(location.pathname);
+  const t = createT(locale);
+  return pageMeta({ locale, title: t("更新日志"), description: t("{arg0} 的功能更新、优化、公告与下线记录。", { arg0: SITE.name }), path: "/changelog", image: "/og/pages/changelog.png" });
 }
 
 const KIND_DOT: Record<Release["kind"], string> = {
@@ -39,6 +45,8 @@ const KIND_DOT: Record<Release["kind"], string> = {
 const KINDS = Object.keys(KIND_DOT) as Release["kind"][];
 
 function ReleaseBody({ lines }: { lines: string[] }) {
+  const t = useT();
+  const locale = useLocale();
   const blocks: Array<string | string[]> = [];
   for (const line of lines) {
     const last = blocks.at(-1);
@@ -68,6 +76,8 @@ function ReleaseBody({ lines }: { lines: string[] }) {
 }
 
 export default function ChangelogPage() {
+  const t = useT();
+  const locale = useLocale();
   const data = useLoaderData<typeof loader>();
   useEffect(() => setChangelogSeen(data.latestVersion), [data.latestVersion]);
   const [kind, setKind] = useState<Release["kind"] | null>(null);
@@ -83,7 +93,7 @@ export default function ChangelogPage() {
 
   const aside = (
     <>
-      <AsideCard title="按类型看" className="hidden lg:block">
+      <AsideCard title={t("按类型看")} className="hidden lg:block">
         <div className="-mx-2 -mb-1">
           {[null, ...KINDS].map((k) => (
             <button
@@ -91,31 +101,30 @@ export default function ChangelogPage() {
               type="button"
               onClick={() => setKind(k)}
               aria-pressed={kind === k}
-              className={`flex w-full items-center gap-2.5 rounded-control px-2 py-2 text-left text-[13.5px] transition-colors ${kind === k ? "bg-bg-sunk font-medium text-ink dark:bg-bg-muted/60" : "text-ink-2 hover:bg-bg-sunk hover:text-ink"}`}
+              className={`flex w-full items-center gap-2.5 rounded-control px-2 py-2 text-start text-[13.5px] transition-colors ${kind === k ? "bg-bg-sunk font-medium text-ink dark:bg-bg-muted/60" : "text-ink-2 hover:bg-bg-sunk hover:text-ink"}`}
             >
               <span className={`size-1.5 rounded-full ${k ? KIND_DOT[k] : "bg-ink-2"}`} aria-hidden="true" />
-              <span className="flex-1">{k ?? "全部"}</span>
-              <span className="num text-[12px] text-ink-4">{k ? data.releases.filter((r) => r.kind === k).length : data.releases.length}</span>
+              <span className="flex-1">{k ? translateKnown(locale, k) : t("全部")}</span>
+              <span className="num text-[12px] text-ink-4">{new Intl.NumberFormat(locale).format(k ? data.releases.filter((r) => r.kind === k).length : data.releases.length)}</span>
             </button>
           ))}
         </div>
       </AsideCard>
-      <AsideCard title="按月份" className="hidden lg:block">
-        <nav aria-label="按月份" className="-mx-2 -mb-1">
+      <AsideCard title={t("按月份")} className="hidden lg:block">
+        <nav aria-label={t("按月份")} className="-mx-2 -mb-1">
           {[...months.entries()].map(([month, m]) => {
             const [y, mo] = month.split("-").map(Number) as [number, number];
             return (
-              <a key={month} href={`#d-${m.first}`} className="flex items-center justify-between rounded-control px-2 py-2 text-[13.5px] text-ink-2 transition-colors hover:bg-bg-sunk hover:text-ink">
-                {y} 年 {mo} 月<span className="num text-[12px] text-ink-4">{m.count} 条</span>
-              </a>
+              <LocaleAnchor key={month} href={`#d-${m.first}`} className="flex items-center justify-between rounded-control px-2 py-2 text-[13.5px] text-ink-2 transition-colors hover:bg-bg-sunk hover:text-ink">
+                {new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", calendar: "gregory", timeZone: "Asia/Shanghai" }).format(new Date(`${month}-01T00:00:00+08:00`))}<span className="num text-[12px] text-ink-4">{t("{count} 条", { count: m.count })}</span>
+              </LocaleAnchor>
             );
           })}
         </nav>
       </AsideCard>
-      <AsideCard title="有想法或遇到问题">
-        <p className="text-[13px] leading-[1.75] text-ink-3">想要的功能、用着不顺的地方，都可以在反馈页告诉我们。</p>
-        <Link to="/feedback" prefetch="intent" className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-accent hover:underline">
-          去反馈 <IconChevronRight size={14} />
+      <AsideCard title={t("有想法或遇到问题")}>
+        <p className="text-[13px] leading-[1.75] text-ink-3">{t("想要的功能、用着不顺的地方，都可以在反馈页告诉我们。")}</p>
+        <Link to="/feedback" prefetch="intent" className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-accent hover:underline">{t("去反馈")}<IconChevronRight size={14} className="rtl:-scale-x-100" />
         </Link>
       </AsideCard>
     </>
@@ -124,12 +133,12 @@ export default function ChangelogPage() {
   return (
     <ReadingLayout aside={aside}>
       <header className="pb-6">
-        <h1 className="text-[24px] font-semibold leading-[1.3] text-ink">更新日志</h1>
-        <p className="mt-1.5 text-[13px] text-ink-3">新功能、调整、下线，都写在这里。</p>
+        <h1 className="text-[24px] font-semibold leading-[1.3] text-ink">{t("更新日志")}</h1>
+        <p className="mt-1.5 text-[13px] text-ink-3">{t("新功能、调整、下线，都写在这里。")}</p>
       </header>
       <div className="space-y-4">
         {[...groups.entries()].map(([date, releases]) => {
-          const h = dateHeading(date);
+          const h = dateHeading(date, locale);
           const plain = releases;
           return (
             <Fragment key={date}>
@@ -143,16 +152,16 @@ export default function ChangelogPage() {
                   </h2>
                   <ol>
                     {plain.map((r) => (
-                      <li key={`${r.date}-${r.time}-${r.title}`} className="grid gap-x-8 gap-y-2 border-b border-line-soft py-5 last:border-b-0 sm:grid-cols-[88px_minmax(0,1fr)]">
+                      <li key={`${r.date}-${beijingTime(`${r.date}T${r.time}:00+08:00`, locale)}-${r.title}`} className="grid gap-x-8 gap-y-2 border-b border-line-soft py-5 last:border-b-0 sm:grid-cols-[88px_minmax(0,1fr)]">
                         <div className="flex items-center gap-3 sm:block">
-                          <span className="mono block text-[12.5px] text-ink-3">{r.time}</span>
+                          <span className="mono block text-[12.5px] text-ink-3">{beijingTime(`${r.date}T${r.time}:00+08:00`, locale)}</span>
                           <span className="inline-flex items-center gap-1.5 text-[11.5px] text-ink-4 sm:mt-1.5">
                             <span className={`size-1.5 rounded-full ${KIND_DOT[r.kind]}`} aria-hidden="true" />
-                            {r.kind}
+                            {translateKnown(locale, r.kind)}
                           </span>
                         </div>
-                        <article className="min-w-0 sm:border-l sm:border-line sm:pl-8">
-                          <h3 className="text-[15px] font-bold leading-snug text-ink">{r.title}</h3>
+                        <article className="min-w-0 sm:border-s sm:border-line sm:ps-8">
+                          <h3 className="text-[15px] font-bold leading-snug text-ink">{translateKnown(locale, r.title)}</h3>
                           <ReleaseBody lines={r.body} />
                         </article>
                       </li>

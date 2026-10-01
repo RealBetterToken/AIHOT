@@ -1,13 +1,16 @@
-// Reading-group expansions on a feed item: the other sources of the card's fact ("另有 N 家信源报道")
-// and the event's developments ("展开 N 条进展"). Each loads on first open and pages on demand.
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, LocaleAnchor } from "../../lib/locale-links";
+import { useLocation } from "react-router";
 import { Collapse } from "../../components/ui/Presence";
-import type { Development, GroupInfo, GroupReport, TimelineFilters } from "@aihot/contracts/site";
 import { IconArrowUpRight, IconChevronDown } from "../../components/icons";
+import { apiPath } from "../../i18n/locale";
+import { useT, useLocale } from "../../i18n/index";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { Development, GroupInfo, GroupReport, TimelineFilters } from "@aihot/contracts/site";
 import { monthDayTime, shortSourceName } from "../../lib/format";
 import { isReload } from "./restore";
 import { sessionCache } from "./session-cache";
+// Reading-group expansions on a feed item: the other sources of the card's fact ("另有 N 家信源报道")
+// and the event's developments ("展开 N 条进展"). Each loads on first open and pages on demand.
 
 function filterParams(filters: TimelineFilters | undefined, cursor: string | null) {
   const sp = new URLSearchParams();
@@ -47,7 +50,8 @@ function remember(entry: string, key: string, saved: Saved) {
 
 /** Open state and pages of one group, restored for the history entry it was left in. */
 function useGroupState<T>(key: string, url: (cursor: string | null) => string, pick: (body: Record<string, unknown>) => T[]) {
-  const entry = useLocation().key;
+  const locale = useLocale();
+  const entry = `${locale}:${useLocation().key}`;
   const initial = groupsCache.peek(entry)?.groups[key] as (Saved & { paged: Paged<T> & { scope: string } }) | undefined;
   const [open, setOpen] = useState(initial?.open ?? false);
   const paged = usePaged<T>(url, pick, initial?.paged);
@@ -139,21 +143,24 @@ function Panel({ open, children }: { open: boolean; children: ReactNode }) {
 }
 
 function LoadState({ loading, error, next, onMore, onRetry, empty }: { loading: boolean; error: boolean; next: string | null; onMore: () => void; onRetry: () => void; empty: boolean }) {
+  const t = useT();
   if (loading && empty) return <div className="space-y-2 py-1">{[0, 1].map((i) => <div key={i} className="skeleton h-4" />)}</div>;
-  if (error) return <button type="button" onClick={onRetry} className="py-1 text-[12.5px] text-hot">暂时无法加载，点此重试</button>;
-  if (next && !loading) return <button type="button" onClick={onMore} className="py-1 text-[12.5px] text-accent hover:underline">加载更多</button>;
+  if (error) return <button type="button" onClick={onRetry} className="py-1 text-[12.5px] text-hot">{t("暂时无法加载，点此重试")}</button>;
+  if (next && !loading) return <button type="button" onClick={onMore} className="py-1 text-[12.5px] text-accent hover:underline">{t("加载更多")}</button>;
   return null;
 }
 
 /** "另有 N 家信源报道": other reports of the fact the card stands for. */
 export function GroupSources({ group, filters, parentId }: { group: GroupInfo; filters?: TimelineFilters; parentId: string }) {
+  const t = useT();
+  const locale = useLocale();
   const { open, setOpen, state, load } = useGroupState<GroupReport>(
     `sources|${group.factId}|${parentId}`,
-    (cursor) => `/api/site/groups/${encodeURIComponent(group.factId)}/reports?${filterParams(filters, cursor)}`,
+    (cursor) => apiPath(`/api/site/groups/${encodeURIComponent(group.factId)}/reports?${filterParams(filters, cursor)}`, locale),
     (b) => b.reports as GroupReport[],
   );
   const others = state.items.filter((r) => r.id !== parentId);
-  const label = group.additionalSourceCount > 0 ? `另有 ${group.additionalSourceCount} 家信源报道` : `${group.reportCount} 篇报道`;
+  const label = group.additionalSourceCount > 0 ? t("另有 {count} 家信源报道", { count: group.additionalSourceCount }) : t("{count} 篇报道", { count: group.reportCount });
   return (
     <div>
       <Toggle
@@ -173,9 +180,9 @@ export function GroupSources({ group, filters, parentId }: { group: GroupInfo; f
               <Link to={`/items/${r.id}`} className="min-w-0 flex-1 truncate text-ink-2 hover:text-accent">
                 {r.title}
               </Link>
-              <a href={r.originalUrl} target="_blank" rel="noopener noreferrer" aria-label="打开原文" className="shrink-0 text-ink-4 hover:text-accent">
+              <LocaleAnchor href={r.originalUrl} target="_blank" rel="noopener noreferrer" aria-label={t("打开原文")} className="shrink-0 text-ink-4 hover:text-accent">
                 <IconArrowUpRight size={13} />
-              </a>
+              </LocaleAnchor>
             </li>
           ))}
         </ul>
@@ -187,9 +194,11 @@ export function GroupSources({ group, filters, parentId }: { group: GroupInfo; f
 
 /** "展开 N 条进展": the other facts of the card's event, newest first. */
 export function GroupDevelopments({ group, filters, parentId }: { group: GroupInfo & { story: NonNullable<GroupInfo["story"]> }; filters?: TimelineFilters; parentId: string }) {
+  const t = useT();
+  const locale = useLocale();
   const { open, setOpen, state, load } = useGroupState<Development>(
     `developments|${group.story.publicId}|${parentId}`,
-    (cursor) => `/api/site/stories/${encodeURIComponent(group.story.publicId)}/developments?${filterParams(filters, cursor)}`,
+    (cursor) => apiPath(`/api/site/stories/${encodeURIComponent(group.story.publicId)}/developments?${filterParams(filters, cursor)}`, locale),
     (b) => b.developments as Development[],
   );
   return (
@@ -201,26 +210,26 @@ export function GroupDevelopments({ group, filters, parentId }: { group: GroupIn
           if (!open && !state.loaded && !state.loading) void load(null);
         }}
       >
-        展开 {group.developmentCount} 条进展
+        {t("展开 {count} 条进展", { count: group.developmentCount })}
       </Toggle>
       <Panel open={open}>
-        <ol className="relative space-y-2 py-1 pl-3.5 before:absolute before:bottom-2 before:left-[3px] before:top-2 before:w-px before:bg-line">
+        <ol className="relative space-y-2 py-1 ps-3.5 before:absolute before:bottom-2 before:start-[3px] before:top-2 before:w-px before:bg-line">
           {state.items.map((d) => (
             <li key={d.factId} className="relative">
-              <span className={`absolute -left-[13.5px] top-[7px] size-[7px] rounded-full ring-2 ring-bg-sunk dark:ring-bg-muted ${d.representative.id === parentId ? "bg-accent" : "bg-line-strong"}`} />
+              <span className={`absolute -start-[13.5px] top-[7px] size-[7px] rounded-full ring-2 ring-bg-sunk dark:ring-bg-muted ${d.representative.id === parentId ? "bg-accent" : "bg-line-strong"}`} />
               <Link to={`/items/${d.representative.id}`} className="block text-[13px] leading-snug text-ink-2 hover:text-accent">
                 {d.title}
               </Link>
               <div className="mt-0.5 text-[11.5px] text-ink-4">
-                {shortSourceName(d.representative.source.name)} · <span className="num">{monthDayTime(d.representative.timelineAt)}</span>
-                {d.reportCount > 1 ? ` · ${d.reportCount} 篇报道` : ""}
+                {shortSourceName(d.representative.source.name)} · <span className="num">{monthDayTime(d.representative.timelineAt, locale)}</span>
+                {d.reportCount > 1 ? ` · ${t("{count} 篇报道", { count: d.reportCount })}` : ""}
               </div>
             </li>
           ))}
         </ol>
         <LoadState loading={state.loading} error={state.error} next={state.next} empty={state.items.length === 0} onMore={() => load(state.next)} onRetry={() => load(null)} />
         <Link to={`/story/${group.story.publicId}`} className="mt-1 inline-flex items-center gap-0.5 py-1 text-[12.5px] font-medium text-accent hover:text-accent-ink">
-          查看完整事件 <IconArrowUpRight size={12} />
+          {t("查看完整事件")} <IconArrowUpRight size={12} />
         </Link>
       </Panel>
     </div>
@@ -229,11 +238,13 @@ export function GroupDevelopments({ group, filters, parentId }: { group: GroupIn
 
 /** "最新进展 · 9月27日 01:21 · …": why a folded event card sits where it does. */
 export function LatestDevelopment({ group }: { group: GroupInfo }) {
+  const t = useT();
+  const locale = useLocale();
   if (!group.latestDevelopment || group.developmentCount <= 1) return null;
   return (
     <p className="relative z-10 mt-2.5 flex items-baseline gap-1.5 text-[13px] leading-relaxed">
-      <span className="shrink-0 font-medium text-accent">最新进展</span>
-      <span className="num shrink-0 text-ink-4">{monthDayTime(group.latestDevelopment.at)}</span>
+      <span className="shrink-0 font-medium text-accent">{t("最新进展")}</span>
+      <span className="num shrink-0 text-ink-4">{monthDayTime(group.latestDevelopment.at, locale)}</span>
       <span className="line-clamp-1 text-ink-3">{group.latestDevelopment.title}</span>
     </p>
   );

@@ -3,36 +3,30 @@
 // background after that (crawlers get the previous copy meanwhile); if the database fails, the last
 // successful sitemap is served (never an empty one). Bounded.
 import { FEATURES } from "@aihot/industry/features";
+import { LOCALES } from "@aihot/contracts/locale";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { config } from "../config.ts";
 import { sql } from "../db.ts";
 import { cached } from "../lib/cache.ts";
-import { escapeXml } from "../lib/text.ts";
 import { siteUrl } from "./links.ts";
 import { leaderboardUrls } from "../leaderboard/read.ts";
 import { topicPageCounts } from "./topics.ts";
+import { formatSitemap, SITEMAP_MAX_URLS, type SitemapEntry } from "./sitemap-format.ts";
 
 async function leaderboardDetailUrls(): Promise<string[]> {
   const fixed = new Set(["/leaderboard", "/leaderboard/sources", "/leaderboard/rules"]);
   return (await leaderboardUrls()).filter((u) => !fixed.has(u) && !u.startsWith("/leaderboard/category/"));
 }
 
-const MAX_URLS = 45_000;
+const MAX_ENTRIES = Math.floor(SITEMAP_MAX_URLS / LOCALES.length);
 const TTL_MS = 5 * 60 * 1000;
 const CACHE_FILE = path.join(config.dataDir, "sitemap-last.xml");
 
 let lastGood: string | null = null;
 
-interface Entry {
-  loc: string;
-  lastmod?: Date | null;
-  changefreq?: string;
-  priority?: number;
-}
-
 async function build(): Promise<string> {
-  const entries: Entry[] = [];
+  const entries: SitemapEntry[] = [];
   const [latestItem] = await sql<{ t: Date | null }[]>`SELECT max(timeline_at) AS t FROM publications WHERE visibility = 'public' AND selected`;
   const [latestDaily] = await sql<{ key: string | null; t: Date | null }[]>`SELECT max(key) AS key, max(generated_at) AS t FROM reports WHERE kind = 'daily'`;
   const now = latestItem?.t ?? new Date();
@@ -78,20 +72,10 @@ async function build(): Promise<string> {
   // Model pages exist only for models on a public top-30 board; source pages for every registered source.
   if (FEATURES.leaderboard) for (const loc of await leaderboardDetailUrls()) entries.push({ loc, changefreq: "weekly", priority: 0.4 });
   const items = await sql<{ id: string; t: Date }[]>`
-    SELECT article_id AS id, updated_at AS t FROM publications WHERE visibility = 'public' AND indexable ORDER BY timeline_at DESC LIMIT ${MAX_URLS - entries.length}`;
+    SELECT article_id AS id, updated_at AS t FROM publications WHERE visibility = 'public' AND indexable ORDER BY timeline_at DESC LIMIT ${Math.max(0, MAX_ENTRIES - entries.length)}`;
   for (const it of items) entries.push({ loc: `/items/${it.id}`, lastmod: it.t, changefreq: "monthly", priority: 0.5 });
 
-  const body = entries
-    .slice(0, MAX_URLS)
-    .map((e) => {
-      const parts = [`<loc>${escapeXml(siteUrl(e.loc))}</loc>`];
-      if (e.lastmod) parts.push(`<lastmod>${e.lastmod.toISOString()}</lastmod>`);
-      if (e.changefreq) parts.push(`<changefreq>${e.changefreq}</changefreq>`);
-      if (e.priority !== undefined) parts.push(`<priority>${e.priority}</priority>`);
-      return `<url>\n${parts.join("\n")}\n</url>`;
-    })
-    .join("\n");
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
+  return formatSitemap(entries, siteUrl(""));
 }
 
 const sitemap = cached(refreshSitemap, { freshMs: TTL_MS, maxStaleMs: 60 * 60_000 });

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { loadOr404 } from "../app/lib/api.server.ts";
 import { adminGet } from "../app/lib/admin.server.ts";
+import { apiGet } from "../app/lib/api.server.ts";
 
 test("public and admin loaders forward cancellation without turning it into a 503", async () => {
   const original = globalThis.fetch;
@@ -23,6 +24,26 @@ test("public and admin loaders forward cancellation without turning it into a 50
       controller.abort();
       await assert.rejects(pending, (error: unknown) => error === controller.signal.reason);
     }
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("SSR requests include the route language and keep upstream cache headers", async () => {
+  const original = globalThis.fetch;
+  const calls: string[] = [];
+  globalThis.fetch = async (input) => {
+    calls.push(String(input));
+    return new Response(JSON.stringify({ title: "ok" }), { headers: { "Content-Type": "application/json", "X-Accel-Expires": "@123456" } });
+  };
+  try {
+    const headers = new Headers();
+    for (const lang of ["zh", "ru", "en"]) {
+      await apiGet("/api/site/items/example?tag=x", { request: new Request(`http://local/${lang}/items/example`), responseHeaders: headers });
+      assert.equal(new URL(calls.at(-1)!).searchParams.get("lang"), lang);
+      assert.equal(new URL(calls.at(-1)!).searchParams.get("tag"), "x");
+    }
+    assert.equal(headers.get("X-Accel-Expires"), "@123456");
   } finally {
     globalThis.fetch = original;
   }

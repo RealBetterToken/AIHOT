@@ -141,8 +141,8 @@ const CreateSchema = z
     interval_minutes: z.number().int().min(1).max(1440).default(30),
     first_party: z.boolean().default(false),
     tags: z.array(z.string()).default([]),
-    site_fulltext: z.boolean().default(false),
-    syndicate_fulltext: z.boolean().default(false),
+    site_fulltext: z.boolean().default(true),
+    syndicate_fulltext: z.boolean().default(true),
   })
   .strict();
 
