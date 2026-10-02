@@ -1,6 +1,7 @@
 .env
 .env.*
 !.env.example
+!.env.models.example
 node_modules/
 dist/
 .cache/

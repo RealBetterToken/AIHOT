@@ -9,6 +9,7 @@ import { localeFromPath, localePath } from "../i18n/locale";
 import { createT, useT, useLocale } from "../i18n/index";
 import { displayDate, formatNumber } from "../lib/format";
 import { SITE } from "@aihot/industry/site";
+import { tagLabel } from "@aihot/industry/taxonomy";
 import type { Route } from "./+types/all";
 import type { PoolResponse } from "@aihot/contracts/site";
 import { isCategoryKey, isChannelKey } from "@aihot/contracts/taxonomy";
@@ -40,7 +41,7 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
   const page = loaderData?.data.page ?? 1;
   return pageMeta({ locale,
     title: q ? t("搜索：{query}", { query: q }) : t("全部动态"),
-    description: t("{name} 收录的全部动态，可按类别与标签筛选，支持中英文搜索。", { name: SITE.name }),
+    description: t("{name} 收录的全部动态，可按类别与标签筛选，支持中文、俄文与英文搜索。", { name: SITE.name }),
     path: listPath("/all", { channel: f && f.channel !== "all" ? f.channel : null, category: f?.category, tag: f?.tag, q, tab: f?.tab === "relevance" ? "relevance" : null, page: page > 1 ? page : null }),
     noindex: !!q,
   });
@@ -77,7 +78,7 @@ export default function AllPage() {
     else sp.delete("tab");
     return `/all?${sp}`;
   };
-  const title = f.q ? t("搜索“{query}”", { query: f.q }) : f.tag ? `#${f.tag}` : null;
+  const title = f.q ? t("搜索“{query}”", { query: f.q }) : f.tag ? `#${tagLabel(f.tag, locale)}` : null;
   const updated = displayDate(data.freshness, locale, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 
   return (

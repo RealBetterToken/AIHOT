@@ -1,37 +1,55 @@
 import { createHash } from "node:crypto";
-import { TARGET_LOCALES, type Locale } from "@aihot/contracts/locale";
+import { isLocale, LOCALES, type Locale } from "@aihot/contracts/locale";
 import { sql, type Db } from "../db.ts";
 import { collapseWhitespace } from "../lib/text.ts";
 import { displayTags } from "./rules.ts";
+import { sourceLanguage, translationMatchesLocale } from "../content/language.ts";
 
 type ArticleText = { title: string | null; summary: string | null; reason: string | null };
+/** 已写作的摘要以中文为源；尚未写作的公开详情按标题实际语言判断。 */
+export function articleTextLocale(row: ArticleText): Locale {
+  if (row.summary?.trim()) return "zh";
+  const locale = sourceLanguage(null, row.title ?? "");
+  return isLocale(locale) ? locale : "en";
+}
 export function articleSourceHash(row: ArticleText): string {
   return createHash("md5").update([row.title ?? "", row.summary ?? "", row.reason ?? ""].join("\x1f")).digest("hex");
 }
 
-type Localization = { ref_id: string; locale: string; source_hash: string; fields: Partial<ArticleText> };
-export async function localizeArticles<T extends ArticleText & { id: string }>(rows: T[], locale: Locale, db: Db = sql): Promise<T[]> {
-  if (locale === "zh" || !rows.length) return rows;
+type Localization = { ref_id: string; locale: string; source_hash: string; fields: unknown };
+export function validArticleFields(value: unknown, source: ArticleText, locale: Locale): value is { title: string; summary: string | null; reason: string | null } {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const fields = value as Partial<ArticleText>;
+  return typeof fields.title === "string" && !!fields.title.trim()
+    && (source.summary?.trim() ? typeof fields.summary === "string" && !!fields.summary.trim() : fields.summary === source.summary)
+    && (fields.reason === null || typeof fields.reason === "string")
+    && (!source.reason?.trim() || !!fields.reason?.trim())
+    && [fields.title, fields.summary, fields.reason].every((text) => !text || translationMatchesLocale(text, locale));
+}
+
+export async function localizeArticles<T extends ArticleText & { id: string }>(rows: T[], locale: Locale, db: Db = sql): Promise<Array<T & { text_locale: Locale }>> {
+  if (!rows.length || rows.every((row) => articleTextLocale(row) === locale)) return rows.map((row) => ({ ...row, text_locale: locale }));
   const stored = await db<Localization[]>`
     SELECT ref_id, locale, source_hash, fields FROM localizations
-    WHERE kind = 'article' AND ref_id = ANY(${rows.map((r) => r.id)}::text[]) AND locale = ANY(${[locale, "en"]}::text[])`;
+    WHERE kind = 'article' AND ref_id = ANY(${rows.map((r) => r.id)}::text[]) AND locale = ${locale}`;
   const byId = new Map(stored.map((r) => [`${r.ref_id}:${r.locale}`, r]));
   return rows.map((row) => {
+    const native = articleTextLocale(row);
+    if (native === locale) return { ...row, text_locale: native };
     const hash = articleSourceHash(row);
-    for (const language of [locale, "en"]) {
-      const found = byId.get(`${row.id}:${language}`);
-      if (found?.source_hash !== hash || !found.fields.title?.trim() || !found.fields.summary?.trim()) continue;
-      return { ...row, title: found.fields.title, summary: found.fields.summary, reason: found.fields.reason?.trim() ? found.fields.reason : row.reason };
+    const found = byId.get(`${row.id}:${locale}`);
+    if (found?.source_hash === hash && validArticleFields(found.fields, row, locale)) {
+      return { ...row, title: found.fields.title, summary: found.fields.summary, reason: row.reason ? found.fields.reason : row.reason, text_locale: locale };
     }
-    return row;
+    return { ...row, text_locale: native };
   });
 }
 
 export async function localizedSearchText(db: Db, articleId: string, hash: string): Promise<string> {
-  const rows = await db<{ fields: Partial<ArticleText> }[]>`
+  const rows = await db<{ fields: Partial<ArticleText> | null }[]>`
     SELECT fields FROM localizations WHERE kind = 'article' AND ref_id = ${articleId} AND source_hash = ${hash}
-    AND locale = ANY(${[...TARGET_LOCALES]}::text[]) ORDER BY locale`;
-  return collapseWhitespace(rows.flatMap((r) => [r.fields.title, r.fields.summary]).filter(Boolean).join(" ")).toLowerCase();
+    AND locale = ANY(${[...LOCALES]}::text[]) ORDER BY locale`;
+  return collapseWhitespace(rows.flatMap((r) => [r.fields?.title, r.fields?.summary]).filter((text) => typeof text === "string").join(" ")).toLowerCase();
 }
 
 export async function refreshLocalizedSearch(db: Db, articleId: string): Promise<void> {

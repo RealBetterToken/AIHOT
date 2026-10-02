@@ -23,7 +23,7 @@ export async function loader({ request }: { request: Request }) {
 export function meta({ location }: { location: { pathname: string } }) {
   const locale = localeFromPath(location.pathname);
   const t = createT(locale);
-  return pageMeta({ locale, title: t("主题"), description: t("按公司与模型、技术方向、内容形态聚合的 AI 主题页：OpenAI、Anthropic、Agent、多模态、论文与教程等 38 个方向。"), path: "/topics", image: "/og/pages/topics.png" });
+  return pageMeta({ locale, title: t("主题"), description: t("按模型与工具、技术方向和内容形态浏览 Vibe Coding 与 AI 编程精选，持续汇集社区实践、问题、教程与观点。"), path: "/topics", image: "/og/pages/topics.png" });
 }
 
 export function headers() {
@@ -37,9 +37,9 @@ export default function TopicsPage() {
   return (
     <div className="pb-10">
       <header className="pb-2 pt-5 lg:pt-1">
-        <h1 className="text-[24px] font-semibold leading-[1.3] text-ink">{t("按主题看 AI")}</h1>
+        <h1 className="text-[24px] font-semibold leading-[1.3] text-ink">{t("按主题看 Vibe Coding")}</h1>
         <p className="mt-1.5 text-[13px] leading-relaxed text-ink-3">
-          {t("按公司与模型、技术方向、内容形态浏览 {count} 个主题，持续汇集近期焦点与精选。", { count: topics.length })}
+          {t("按模型与工具、技术方向和内容形态浏览 {count} 个主题，持续汇集近期焦点与精选。", { count: topics.length })}
         </p>
       </header>
       {groups.map((g) => (

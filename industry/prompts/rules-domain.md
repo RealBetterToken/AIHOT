@@ -1,12 +1,14 @@
 
-【AI 领域翻译规则 — 本平台 100% 是 AI/ML/LLM 行业内容，严格遵守】
+【编程、Vibe Coding 和 AI 领域用语规则】
 
-1. 歧义默认值：以下词在中文有非 AI 歧义，**一律按 AI 含义翻译**：
+读者是程序员。用国内开发者自然使用的词，避免逐词直译的英语隐喻和名词堆叠。deploy gate 写“发布门禁”，blast radius 写“影响范围”，pre-flight checks 写“部署前检查”，checkout 在电商语境指“结账”，在 Git 语境保留 git checkout。合并 PR、上线、回滚、灰度发布都是普通工程表达。Skill、Hook 若指工具内的命名功能，保留 Skill、Hook；泛指能力或钩子时按语境译。Prompt 不等于系统提示词，不擅自添加“系统”“精心设计”等限定。作者的经验和观点仍要归因给作者，不升级成普遍结论。
+
+1. 以下词结合编程和 AI 上下文消除歧义，不把每个多义词都强行套成模型术语：
    - LLM = 大语言模型（绝不译"法学硕士"/"Master of Laws"）
-   - Token / tokens = 模型 token（保留英文；绝不译"代币"/"令牌"）
+   - Token / tokens：模型用量语境保留 token；认证语境的 access token 可以写“访问令牌”，不要混为模型用量
    - Transformer = Transformer 架构（保留英文；不译"变压器"）
    - Diffusion = 扩散模型（AI 生成，不是物理扩散）
-   - Agent / Agentic = AI 智能体 / 智能体的（不译"代理人"/"中介"）
+   - Agent / Agentic：AI 辅助开发语境写 AI 智能体 / 智能体的；网络代理、user-agent 和构建代理按各自工程含义处理
    - Alignment = 对齐（AI 安全语境）
    - Inference = 推理（模型生成）
    - Reasoning = 推理（注意：与 inference 都译"推理"，必要时用"链式推理"区分 CoT；reasoning model 指 o1/o3/R1 这类思考型模型）
@@ -17,7 +19,7 @@
    - Pretrain / Pretraining = 预训练
    - Context window = 上下文窗口
    - Prompt = 提示词
-   - Skill / Skills = 技能（Claude 等 Agent 框架的能力包，不译"特长"）
+   - Skill / Skills：Claude 等工具中的命名能力包保留 Skill / Skills；泛指人的能力时才译“技能”
 
 2. 以下专有名词**一律保留英文原文**，不翻译不加中文括注：
    - AI 公司：OpenAI / Anthropic / Google DeepMind / xAI / Meta AI / Mistral / DeepSeek / Cohere / HuggingFace（HF）/ Runway / ElevenLabs / Suno / Pika / Midjourney / Perplexity

@@ -1,5 +1,6 @@
 // Item detail and Markdown export, both behind the same visibility and licence rules.
-import { DEFAULT_LOCALE, type Locale } from "@aihot/contracts/locale";
+import { DEFAULT_LOCALE, LOCALES, type Locale } from "@aihot/contracts/locale";
+import { sourceLanguage, translationMatchesLocale } from "../content/language.ts";
 import { localizeItemStories, localizedStoryTexts } from "./localized-story-report.ts";
 import { localizeArticles } from "./localized.ts";
 import type { ItemDetail, SiteItemDetail, OutlineEntry, StoryRef } from "@aihot/contracts/site";
@@ -68,6 +69,7 @@ export async function loadItemDetail(id: string, now = new Date(), locale: Local
       readingMode: "summary-only",
       author: null,
       language: row.language,
+      readingLanguages: LOCALES.map((locale) => ({ locale, status: "unavailable" })),
       body: null,
       outline: [],
       relatedStories: [],
@@ -108,6 +110,16 @@ export async function loadItemDetail(id: string, now = new Date(), locale: Local
     }
   }
 
+  const native = sourceLanguage(row.language, row.body_text ?? row.x_post?.text ?? "");
+  const translations = body ? await sql<{ lang: Locale; complete: boolean; body_html: string }[]>`
+    SELECT tr.lang, tr.complete, tr.body_html FROM translations tr JOIN articles a ON a.id = tr.article_id
+      WHERE tr.article_id = ${id} AND tr.revision >= a.revision
+        AND coalesce(tr.body_text,'') <> '' AND coalesce(tr.body_html,'') <> ''` : [];
+  const readingLanguages: ItemDetail["readingLanguages"] = LOCALES.map((locale) => {
+    const translated = translations.find((t) => t.lang === locale && (!t.complete || translationMatchesLocale(t.body_html, locale)));
+    return { locale, status: !body ? "unavailable" : native === locale ? "original" : translated ? translated.complete ? "translated" : "partial" : "pending" };
+  });
+
   let group: ItemDetail["group"] = null;
   if (row.fact_id) {
     const [g] = await sql<{ public_id: string; reports: number; sources: number }[]>`
@@ -135,7 +147,8 @@ export async function loadItemDetail(id: string, now = new Date(), locale: Local
     ...summary,
     readingMode: "full",
     author: row.author,
-    language: row.language,
+    language: row.language ?? native,
+    readingLanguages,
     body,
     outline,
     relatedStories: localizedRelated,

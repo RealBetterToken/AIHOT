@@ -1,5 +1,5 @@
 {
-  "$comment": "示范信源：首次启动时导入（scripts/seed.ts），已存在的不会被覆盖。之后在后台“信源”里增删改。字段说明见 docs/customize.md。 信源默认在站内展示全文，全文 RSS 默认带正文；个别来源不允许转载时，在后台关闭 site_fulltext / syndicate_fulltext。",
+  "$comment": "示范信源：首次启动时导入（scripts/seed.ts），已存在的不会被覆盖。之后在后台“信源”里增删改。字段说明见 docs/customize.md。 信源默认在站内展示全文，全文 RSS 默认带正文；个别来源不允许转载时，在后台关闭 site_fulltext / syndicate_fulltext。 当前以程序员社区的实践、问题与讨论为主要采集方向；部分重叠或宽泛的旧入口保留配置但默认暂停（enabled=false），可在后台恢复。已有站点的暂停设置需单独应用，见 docs/sources.md。 2026-10-01 按 Vibe Coding 实践相关性及真实产出精简，另暂停 12 个泛搜索、综合频道、重复或样本偏推广的入口；当前 88 个启用、63 个暂停，依据见 docs/source-pruning.md。",
   "sources": [
     {
       "id": "rss-aihero-skills",
@@ -355,7 +355,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "web-kimi-code-whats-new",
@@ -738,7 +739,8 @@
         "安全"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "rss-habr-ai",
@@ -759,7 +761,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "rss-habr-programming",
@@ -780,7 +783,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "web-ru-etechlead",
@@ -1294,7 +1298,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "rss-permission-protocol-agent-incidents",
@@ -1342,7 +1347,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "web-arena-blog",
@@ -1370,7 +1376,8 @@
         "研究"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "web-artificial-analysis-articles",
@@ -1398,7 +1405,8 @@
         "研究"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-addy-osmani",
@@ -1416,7 +1424,8 @@
         "个人"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-amp",
@@ -1434,7 +1443,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-boris-cherny",
@@ -1452,7 +1462,8 @@
         "个人"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-claude-devs",
@@ -1470,7 +1481,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-anthropic",
@@ -1488,7 +1500,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-arena",
@@ -1506,7 +1519,8 @@
         "研究"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-artificial-analysis",
@@ -1524,7 +1538,8 @@
         "研究"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-claude",
@@ -1542,7 +1557,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-deepseek",
@@ -1560,7 +1576,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-kimi",
@@ -1578,7 +1595,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-minimax",
@@ -1596,7 +1614,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-openai",
@@ -1614,7 +1633,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-qwen",
@@ -1632,7 +1652,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-zai",
@@ -1650,7 +1671,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-cline",
@@ -1668,7 +1690,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-cognition",
@@ -1686,7 +1709,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-cursor",
@@ -1704,7 +1728,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-kilo",
@@ -1722,7 +1747,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-minimax-agent",
@@ -1740,7 +1766,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-openai-devs",
@@ -1758,7 +1785,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-opencode",
@@ -1776,7 +1804,8 @@
         "官方"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-tibo-sottiaux",
@@ -1794,7 +1823,8 @@
         "个人"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "rss-jesse-vincent",
@@ -1934,7 +1964,8 @@
         "媒体"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "rss-yt-cole-medin",
@@ -1957,7 +1988,8 @@
         "教程"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "rss-habr-kova13v",
@@ -2085,7 +2117,8 @@
         "媒体"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "rss-dan-luu",
@@ -2107,7 +2140,8 @@
         "个人"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "rss-drew-breunig",
@@ -2240,7 +2274,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "json-gh-codex-workaround",
@@ -2271,7 +2306,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "rss-thoughtworks-engineering",
@@ -2293,7 +2329,8 @@
         "研究"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "rss-infoq-ai-coding",
@@ -2359,7 +2396,8 @@
         "研究"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "rss-paper-compute-blog",
@@ -2448,7 +2486,8 @@
         "教程"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "rss-shopify-engineering-ai-workflows",
@@ -2470,7 +2509,8 @@
         "研究"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "web-motyl-ai-weekly",
@@ -2500,24 +2540,32 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "json-hn-coding-agent-discussion",
       "name": "Hacker News · Coding Agent 讨论",
       "kind": "json_list",
       "config": {
-        "url": "https://hn.algolia.com/api/v1/search_by_date?query=coding%20agent&tags=story&numericFilters=points%3E30&hitsPerPage=20",
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=coding%20agent&tags=story&numericFilters=points%3E30&hitsPerPage=20&restrictSearchableAttributes=title",
         "itemsPath": "hits",
         "titlePaths": [
           "title"
         ],
         "publishedAtPath": "created_at",
-        "urlTemplate": "https://news.ycombinator.com/item?id={objectID}",
+        "urlTemplate": "{raw:url}",
         "_aihot": {
           "initialBackfillLimit": 8
         },
-        "fetchPublicContent": true
+        "urlTemplateFallback": "https://news.ycombinator.com/item?id={objectID}",
+        "summaryPaths": [
+          "story_text"
+        ],
+        "summaryIsBody": true,
+        "authorPaths": [
+          "author"
+        ]
       },
       "tier": "T2",
       "first_party": false,
@@ -2536,17 +2584,24 @@
       "name": "Hacker News · AI Code Review 讨论",
       "kind": "json_list",
       "config": {
-        "url": "https://hn.algolia.com/api/v1/search_by_date?query=AI%20code%20review&tags=story&numericFilters=points%3E20&hitsPerPage=20",
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=AI%20code%20review&tags=story&numericFilters=points%3E20&hitsPerPage=20&restrictSearchableAttributes=title",
         "itemsPath": "hits",
         "titlePaths": [
           "title"
         ],
         "publishedAtPath": "created_at",
-        "urlTemplate": "https://news.ycombinator.com/item?id={objectID}",
+        "urlTemplate": "{raw:url}",
         "_aihot": {
           "initialBackfillLimit": 8
         },
-        "fetchPublicContent": true
+        "urlTemplateFallback": "https://news.ycombinator.com/item?id={objectID}",
+        "summaryPaths": [
+          "story_text"
+        ],
+        "summaryIsBody": true,
+        "authorPaths": [
+          "author"
+        ]
       },
       "tier": "T2",
       "first_party": false,
@@ -2565,17 +2620,24 @@
       "name": "Hacker News · Context Engineering 讨论",
       "kind": "json_list",
       "config": {
-        "url": "https://hn.algolia.com/api/v1/search_by_date?query=context%20engineering&tags=story&numericFilters=points%3E20&hitsPerPage=20",
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=context%20engineering&tags=story&numericFilters=points%3E20&hitsPerPage=20&restrictSearchableAttributes=title",
         "itemsPath": "hits",
         "titlePaths": [
           "title"
         ],
         "publishedAtPath": "created_at",
-        "urlTemplate": "https://news.ycombinator.com/item?id={objectID}",
+        "urlTemplate": "{raw:url}",
         "_aihot": {
           "initialBackfillLimit": 8
         },
-        "fetchPublicContent": true
+        "urlTemplateFallback": "https://news.ycombinator.com/item?id={objectID}",
+        "summaryPaths": [
+          "story_text"
+        ],
+        "summaryIsBody": true,
+        "authorPaths": [
+          "author"
+        ]
       },
       "tier": "T2",
       "first_party": false,
@@ -2594,17 +2656,24 @@
       "name": "Hacker News · Harness Engineering 讨论",
       "kind": "json_list",
       "config": {
-        "url": "https://hn.algolia.com/api/v1/search_by_date?query=harness%20engineering&tags=story&numericFilters=points%3E20&hitsPerPage=20",
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=harness%20engineering&tags=story&numericFilters=points%3E20&hitsPerPage=20&restrictSearchableAttributes=title",
         "itemsPath": "hits",
         "titlePaths": [
           "title"
         ],
         "publishedAtPath": "created_at",
-        "urlTemplate": "https://news.ycombinator.com/item?id={objectID}",
+        "urlTemplate": "{raw:url}",
         "_aihot": {
           "initialBackfillLimit": 8
         },
-        "fetchPublicContent": true
+        "urlTemplateFallback": "https://news.ycombinator.com/item?id={objectID}",
+        "summaryPaths": [
+          "story_text"
+        ],
+        "summaryIsBody": true,
+        "authorPaths": [
+          "author"
+        ]
       },
       "tier": "T2",
       "first_party": false,
@@ -2640,7 +2709,8 @@
         "开源"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "json-gh-mcp-developer-tools",
@@ -2672,7 +2742,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "json-gh-developer-agent-skills",
@@ -2704,7 +2775,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "json-gh-ai-coding-developer-tools",
@@ -2736,7 +2808,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-thariq",
@@ -2754,7 +2827,8 @@
         "个人"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-ryan-lopopolo",
@@ -2772,7 +2846,8 @@
         "个人"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-search-claude-code-workflow",
@@ -2791,7 +2866,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-search-context-cost",
@@ -2810,7 +2886,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-search-codex-agents-md",
@@ -2829,7 +2906,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-search-skills-hooks",
@@ -2848,7 +2926,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-search-zh",
@@ -2867,7 +2946,8 @@
         "社区"
       ],
       "site_fulltext": true,
-      "syndicate_fulltext": true
+      "syndicate_fulltext": true,
+      "enabled": false
     },
     {
       "id": "x-search-ru",
@@ -2882,6 +2962,795 @@
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 120,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true,
+      "enabled": false
+    },
+    {
+      "id": "json-hn-vibecoding",
+      "name": "Hacker News · Vibe Coding 讨论",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=vibe+coding&tags=story&restrictSearchableAttributes=title&hitsPerPage=20",
+        "itemsPath": "hits",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "story_text"
+        ],
+        "authorPaths": [
+          "author"
+        ],
+        "publishedAtPath": "created_at",
+        "externalIdPath": "objectID",
+        "urlTemplate": "{raw:url}",
+        "summaryIsBody": true,
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "urlTemplateFallback": "https://news.ycombinator.com/item?id={objectID}"
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-hn-ask-ai-coding",
+      "name": "Hacker News · AI 编程经验问答",
+      "kind": "json_list",
+      "config": {
+        "url": "https://hn.algolia.com/api/v1/search_by_date?query=AI+coding&tags=ask_hn&restrictSearchableAttributes=title&hitsPerPage=20",
+        "itemsPath": "hits",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "story_text"
+        ],
+        "authorPaths": [
+          "author"
+        ],
+        "publishedAtPath": "created_at",
+        "externalIdPath": "objectID",
+        "urlTemplate": "https://news.ycombinator.com/item?id={objectID}",
+        "summaryIsBody": true,
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-reddit-claudecode",
+      "name": "Reddit · ClaudeCode / Codex / VibeCoding",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.reddit.com/r/ClaudeCode+codex+vibecoding/new/.rss",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "sortByPublishedAt": true
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-reddit-codex",
+      "name": "Reddit · r/codex",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.reddit.com/r/codex/new/.rss",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true,
+      "enabled": false
+    },
+    {
+      "id": "rss-reddit-vibecoding",
+      "name": "Reddit · r/vibecoding",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.reddit.com/r/vibecoding/new/.rss",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true,
+      "enabled": false
+    },
+    {
+      "id": "rss-devto-vibecoding",
+      "name": "DEV Community · Vibe Coding",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://dev.to/feed/tag/vibecoding",
+        "summaryIsBody": true,
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-devto-aicoding",
+      "name": "DEV Community · AI Coding",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://dev.to/feed/tag/aicoding",
+        "summaryIsBody": true,
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-devto-cursor",
+      "name": "DEV Community · Cursor",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://dev.to/feed/tag/cursor",
+        "summaryIsBody": true,
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-devto-mcp",
+      "name": "DEV Community · MCP",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://dev.to/feed/tag/mcp",
+        "summaryIsBody": true,
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-zh-v2ex-codex",
+      "name": "V2EX · Codex",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.v2ex.com/feed/codex.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-zh-v2ex-cursor",
+      "name": "V2EX · Cursor",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.v2ex.com/feed/cursor.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true,
+      "enabled": false
+    },
+    {
+      "id": "rss-zh-v2ex-programmer",
+      "name": "V2EX · 程序员",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.v2ex.com/feed/programmer.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true,
+      "enabled": false
+    },
+    {
+      "id": "rss-zh-v2ex-create",
+      "name": "V2EX · 分享创造",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.v2ex.com/feed/create.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true,
+      "enabled": false
+    },
+    {
+      "id": "json-zh-csdn-claudecode",
+      "name": "CSDN · Claude Code 实践",
+      "kind": "json_list",
+      "config": {
+        "url": "https://so.csdn.net/api/v3/search?q=Claude+Code&t=blog&p=1&s=2&tm=30&size=20",
+        "itemsPath": "result_vos",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "description",
+          "digest"
+        ],
+        "authorPaths": [
+          "nickname",
+          "author"
+        ],
+        "publishedAtPath": "create_time",
+        "publishedAtUnit": "epoch_ms",
+        "externalIdPath": "articleid",
+        "urlTemplate": "https://blog.csdn.net/{username}/article/details/{articleid}",
+        "allowUrlPrefixes": [
+          "https://blog.csdn.net/"
+        ],
+        "sortByPublishedAt": true,
+        "fetchPublicContent": true,
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-zh-csdn-cursor-ai",
+      "name": "CSDN · Cursor AI 实践",
+      "kind": "json_list",
+      "config": {
+        "url": "https://so.csdn.net/api/v3/search?q=Cursor+AI&t=blog&p=1&s=2&tm=30&size=20",
+        "itemsPath": "result_vos",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "description",
+          "digest"
+        ],
+        "authorPaths": [
+          "nickname",
+          "author"
+        ],
+        "publishedAtPath": "create_time",
+        "publishedAtUnit": "epoch_ms",
+        "externalIdPath": "articleid",
+        "urlTemplate": "https://blog.csdn.net/{username}/article/details/{articleid}",
+        "allowUrlPrefixes": [
+          "https://blog.csdn.net/"
+        ],
+        "sortByPublishedAt": true,
+        "fetchPublicContent": true,
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true,
+      "enabled": false
+    },
+    {
+      "id": "json-zh-csdn-codex-cli",
+      "name": "CSDN · Codex CLI 实践",
+      "kind": "json_list",
+      "config": {
+        "url": "https://so.csdn.net/api/v3/search?q=Codex+CLI&t=blog&p=1&s=2&tm=30&size=20",
+        "itemsPath": "result_vos",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "description",
+          "digest"
+        ],
+        "authorPaths": [
+          "nickname",
+          "author"
+        ],
+        "publishedAtPath": "create_time",
+        "publishedAtUnit": "epoch_ms",
+        "externalIdPath": "articleid",
+        "urlTemplate": "https://blog.csdn.net/{username}/article/details/{articleid}",
+        "allowUrlPrefixes": [
+          "https://blog.csdn.net/"
+        ],
+        "sortByPublishedAt": true,
+        "fetchPublicContent": true,
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-zh-juejin-aicoding",
+      "name": "稀土掘金 · AI 编程",
+      "kind": "json_list",
+      "config": {
+        "url": "https://api.juejin.cn/recommend_api/v1/article/recommend_tag_feed",
+        "method": "POST",
+        "bodyJson": {
+          "tag_ids": [
+            "7467857238494019610"
+          ],
+          "cursor": "0",
+          "id_type": 2,
+          "limit": 20,
+          "sort_type": 300
+        },
+        "itemsPath": "data",
+        "titlePaths": [
+          "article_info.title"
+        ],
+        "summaryPaths": [
+          "article_info.brief_content"
+        ],
+        "authorPaths": [
+          "author_user_info.user_name"
+        ],
+        "publishedAtPath": "article_info.ctime",
+        "publishedAtUnit": "epoch_s",
+        "externalIdPath": "article_id",
+        "urlTemplate": "https://juejin.cn/post/{article_id}",
+        "allowUrlPrefixes": [
+          "https://juejin.cn/post/"
+        ],
+        "fetchPublicContent": true,
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-zh-juejin-cursor",
+      "name": "稀土掘金 · Cursor",
+      "kind": "json_list",
+      "config": {
+        "url": "https://api.juejin.cn/recommend_api/v1/article/recommend_tag_feed",
+        "method": "POST",
+        "bodyJson": {
+          "tag_ids": [
+            "7467857241178128435"
+          ],
+          "cursor": "0",
+          "id_type": 2,
+          "limit": 20,
+          "sort_type": 300
+        },
+        "itemsPath": "data",
+        "titlePaths": [
+          "article_info.title"
+        ],
+        "summaryPaths": [
+          "article_info.brief_content"
+        ],
+        "authorPaths": [
+          "author_user_info.user_name"
+        ],
+        "publishedAtPath": "article_info.ctime",
+        "publishedAtUnit": "epoch_s",
+        "externalIdPath": "article_id",
+        "urlTemplate": "https://juejin.cn/post/{article_id}",
+        "allowUrlPrefixes": [
+          "https://juejin.cn/post/"
+        ],
+        "fetchPublicContent": true,
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-zh-juejin-vibecoding",
+      "name": "稀土掘金 · VibeCoding",
+      "kind": "json_list",
+      "config": {
+        "url": "https://api.juejin.cn/recommend_api/v1/article/recommend_tag_feed",
+        "method": "POST",
+        "bodyJson": {
+          "tag_ids": [
+            "7467857241178439731"
+          ],
+          "cursor": "0",
+          "id_type": 2,
+          "limit": 20,
+          "sort_type": 300
+        },
+        "itemsPath": "data",
+        "titlePaths": [
+          "article_info.title"
+        ],
+        "summaryPaths": [
+          "article_info.brief_content"
+        ],
+        "authorPaths": [
+          "author_user_info.user_name"
+        ],
+        "publishedAtPath": "article_info.ctime",
+        "publishedAtUnit": "epoch_s",
+        "externalIdPath": "article_id",
+        "urlTemplate": "https://juejin.cn/post/{article_id}",
+        "allowUrlPrefixes": [
+          "https://juejin.cn/post/"
+        ],
+        "fetchPublicContent": true,
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-ru-habr-codex-search",
+      "name": "Habr · Codex",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://habr.com/ru/rss/search/?q=%5BCodex%5D&order_by=date&target_type=posts&fl=ru",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-ru-habr-cursor-search",
+      "name": "Habr · Cursor",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://habr.com/ru/rss/search/?q=%5BCursor%5D&order_by=date&target_type=posts&fl=ru",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "rss-ru-tproger",
+      "name": "Tproger · Программирование",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://tproger.ru/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true
+    },
+    {
+      "id": "json-ru-stackoverflow-openai",
+      "name": "Stack Overflow на русском · OpenAI 问题",
+      "kind": "json_list",
+      "config": {
+        "url": "https://api.stackexchange.com/2.3/search/advanced?site=ru.stackoverflow&order=desc&sort=creation&q=OpenAI&filter=withbody&pagesize=20",
+        "itemsPath": "items",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "body"
+        ],
+        "summaryIsBody": true,
+        "authorPaths": [
+          "owner.display_name"
+        ],
+        "publishedAtPath": "creation_date",
+        "publishedAtUnit": "epoch_s",
+        "externalIdPath": "question_id",
+        "urlTemplate": "{raw:link}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true,
+      "enabled": false
+    },
+    {
+      "id": "json-ru-stackoverflow-copilot",
+      "name": "Stack Overflow на русском · Copilot 问题",
+      "kind": "json_list",
+      "config": {
+        "url": "https://api.stackexchange.com/2.3/search/advanced?site=ru.stackoverflow&order=desc&sort=creation&q=Copilot&filter=withbody&pagesize=20",
+        "itemsPath": "items",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "body"
+        ],
+        "summaryIsBody": true,
+        "authorPaths": [
+          "owner.display_name"
+        ],
+        "publishedAtPath": "creation_date",
+        "publishedAtUnit": "epoch_s",
+        "externalIdPath": "question_id",
+        "urlTemplate": "{raw:link}",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true,
+      "enabled": false
+    },
+    {
+      "id": "rss-zh-linux-do-claude-code",
+      "name": "LINUX DO · Claude Code",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://linux.do/tag/claude-code.rss",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true,
+      "enabled": false
+    },
+    {
+      "id": "rss-zh-linux-do-codex",
+      "name": "LINUX DO · Codex",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://linux.do/tag/codex.rss",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "社区"
+      ],
+      "site_fulltext": true,
+      "syndicate_fulltext": true,
+      "enabled": false
+    },
+    {
+      "id": "rss-cursor-forum-showcase",
+      "name": "Cursor Forum · Showcase",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://forum.cursor.com/c/showcase/9.rss",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
       "tags": [
         "社区"
       ],

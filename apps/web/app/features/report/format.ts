@@ -43,13 +43,10 @@ export function monthRange(key: string): [string, string] {
   return [`${key}-01`, ymd(new Date(Date.UTC(y, m, 0)))];
 }
 
-/** "这一天的 4 件 AI 大事" / "本周的 12 件 AI 大事" / "8 月的 20 件 AI 大事". */
+/** 根据刊物周期生成本地化的精选数量标题。 */
 export function headline(kind: ReportKind, key: string, count: number, locale: SiteLocale = "zh"): string {
   const t = createT(locale);
-  if (locale !== "zh") return t(kind === "daily" ? "这一天的 {count} 件 AI 大事" : kind === "weekly" ? "本周的 {count} 件 AI 大事" : "{month}的 {count} 件 AI 大事", { count, month: kind === "monthly" ? reportDate(`${key}-01`, locale, { month: "long" }) : "" });
-  if (kind === "daily") return `这一天的 ${count} 件 AI 大事`;
-  if (kind === "weekly") return `本周的 ${count} 件 AI 大事`;
-  return `${Number(key.slice(5, 7))} 月的 ${count} 件 AI 大事`;
+  return t(kind === "daily" ? "这一天的 {count} 条编程精选" : kind === "weekly" ? "本周的 {count} 条编程精选" : "{month}的 {count} 条编程精选", { count, month: kind === "monthly" ? reportDate(`${key}-01`, locale, { month: "long" }) : "" });
 }
 
 /** "09.16" for a story inside a week or month. */
@@ -190,7 +187,7 @@ export function dateLine(kind: ReportKind, key: string, locale: SiteLocale = "zh
 }
 
 /** What each kind is, under its nameplate. */
-export const MOTTO: Record<ReportKind, string> = { daily: "人工智能 · 每日要闻", weekly: "人工智能 · 每周综述", monthly: "人工智能 · 每月盘点" };
+export const MOTTO: Record<ReportKind, string> = { daily: "AI 编程 · 每日精选", weekly: "AI 编程 · 每周综述", monthly: "AI 编程 · 每月盘点" };
 
 export interface PeriodCell {
   key: string | null;

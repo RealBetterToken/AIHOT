@@ -1,9 +1,9 @@
 import { Link, LocaleAnchor } from "../lib/locale-links";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate, useLocation } from "react-router";
 import { SelectedBadge } from "../components/ui/Badge";
 import { ScoreLabel } from "../components/ui/Score";
-import { PillTabs } from "../components/ui/Tabs";
+import { ReadingLanguages } from "../features/item/ReadingLanguages";
 import { ArticleLayout, RailSection } from "../components/ui/Page";
 import { Menu, MenuItem } from "../components/ui/Menu";
 import { StarButton } from "../features/feed/parts";
@@ -15,6 +15,7 @@ import { IconArrowLeft, IconCopy, IconDownload, IconExternal, IconImage, IconMen
 import { apiPath, localeFromPath, localePath, type Locale } from "../i18n/locale";
 import { createT, useT, useLocale } from "../i18n/index";
 import { SITE } from "@aihot/industry/site";
+import { tagLabel } from "@aihot/industry/taxonomy";
 import type { Route } from "./+types/item";
 import type { SiteItemDetail } from "@aihot/contracts/site";
 import { loadOr404 } from "../lib/api.server";
@@ -104,6 +105,7 @@ export default function ItemPage() {
   const locale = useLocale();
   const { item } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const originalView = useLocation().pathname.endsWith("/original");
   const hasTranslation = item.hasTranslation;
   const lang = item.bodyLanguage;
   const [posterRequested, setPosterRequested] = useState(false);
@@ -190,7 +192,7 @@ export default function ItemPage() {
     </div>
   );
   const verdict = (item.selected || item.score !== null) && (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {item.selected && <SelectedBadge />}
       <ScoreLabel score={item.score} />
     </div>
@@ -233,7 +235,7 @@ export default function ItemPage() {
       {item.reason && !summaryOnly ? (
         <RailSection title={t("推荐理由")}>
           {verdict && <div className="mb-3">{verdict}</div>}
-          <p className="text-[13.5px] leading-[1.8] text-ink-2">{item.reason}</p>
+          <p lang={item.textLocale ?? "zh"} className="text-[13.5px] leading-[1.8] text-ink-2">{item.reason}</p>
         </RailSection>
       ) : (
         verdict && <RailSection title={t("AI 评分")}>{verdict}</RailSection>
@@ -243,7 +245,7 @@ export default function ItemPage() {
           <div className="flex flex-wrap gap-1.5">
             {item.tags.slice(0, 8).map((t) => (
               <Link key={t} to={`/all?tag=${encodeURIComponent(t)}`} className="chip">
-                #{t}
+                #{tagLabel(t, locale)}
               </Link>
             ))}
           </div>
@@ -307,20 +309,22 @@ export default function ItemPage() {
               </span>
             )}
           </div>
-          {!isX && <h1 className="text-[26px] font-bold leading-[1.38] tracking-[-0.01em] text-ink lg:text-[32px] lg:leading-[1.34] xl:text-[36px] xl:leading-[1.3]">{item.title}</h1>}
-          {!isX && item.originalTitle && <p className="mt-2.5 text-[14px] leading-relaxed text-ink-4">{item.originalTitle}</p>}
+          {!isX && <h1 lang={item.textLocale ?? "zh"} className="text-[26px] font-bold leading-[1.38] tracking-[-0.01em] text-ink lg:text-[32px] lg:leading-[1.34] xl:text-[36px] xl:leading-[1.3]">{item.title}</h1>}
+          {!isX && item.originalTitle && <p className="mt-2.5 text-[14px] leading-relaxed text-ink-4">{t("原文标题")}{locale === "zh" ? "：" : ": "}<span lang={item.language ?? undefined}>{item.originalTitle}</span></p>}
+          <ReadingLanguages itemId={item.id} choices={item.readingLanguages ?? []} hasBody={!!item.body} original={originalView} />
+          {item.textLocale && item.textLocale !== locale && <p role="status" className="mt-3 text-[13px] text-ink-3">{t("当前语言的标题和摘要正在等待翻译。")}</p>}
 
           {item.summary && (
             <section className={isX ? "mt-4" : "mt-7 xl:mt-8"}>
               <div className="mb-2 text-[12px] font-semibold text-accent">{summaryOnly ? t("摘要") : t("AI 导读")}</div>
-              <p className="text-[18px] leading-[1.7] text-ink xl:text-[20px] xl:leading-[1.7]">{item.summary}</p>
+              <p lang={item.textLocale ?? "zh"} className="text-[18px] leading-[1.7] text-ink xl:text-[20px] xl:leading-[1.7]">{item.summary}</p>
             </section>
           )}
 
           {item.reason && !summaryOnly && (
             <section className="mt-6 border-t border-line pt-4 lg:hidden">
               <div className="mb-1 text-[12px] font-semibold text-ink-3">{t("推荐理由")}</div>
-              <p className="text-[15px] leading-[1.75] text-ink-2">{item.reason}</p>
+              <p lang={item.textLocale ?? "zh"} className="text-[15px] leading-[1.75] text-ink-2">{item.reason}</p>
             </section>
           )}
 
@@ -336,22 +340,11 @@ export default function ItemPage() {
             <section className="mt-9 border-t border-line pt-4 xl:mt-10">
               <div className="mb-6 flex items-center justify-between gap-3">
                 <span className="text-[12px] text-ink-4">{bodyLabel}</span>
-                {hasTranslation && (
-                  <PillTabs
-                    size="xs"
-                    layoutId="item-body-lang"
-                    label={t("正文语言")}
-                    active={lang}
-                    items={[
-                      { key: item.body.localizedLanguage ?? locale, label: ({ zh: "中文", ru: "Русский", en: "English" })[item.body.localizedLanguage ?? locale], prefetch: "intent", replace: true, to: `/items/${item.id}` },
-                      { key: "original", label: t("原文"), prefetch: "intent", replace: true, to: `/items/${item.id}/original` },
-                    ]}
-                  />
-                )}
               </div>
               {hasTranslation && lang !== "original" && !item.body.complete && (
                 <p className="mb-5 rounded-control bg-bg-sunk px-3 py-2 text-[13px] text-ink-3">{t("译文尚不完整，完整内容请切换到原文。")}</p>
               )}
+              {!originalView && item.readingLanguages?.some((choice) => choice.locale === locale && choice.status === "pending") && <p role="status" className="mb-5 rounded-control bg-bg-sunk px-3 py-2 text-[13px] text-ink-3">{t("当前语言的正文正在等待翻译，暂时显示原文。")}</p>}
               <div className="prose" lang={lang === "original" ? item.language ?? undefined : lang} dangerouslySetInnerHTML={{ __html: bodyHtml }} />
             </section>
           )}
@@ -371,7 +364,7 @@ export default function ItemPage() {
             <div className="mt-4 flex flex-wrap gap-1.5 lg:hidden">
               {item.tags.slice(0, 6).map((t) => (
                 <Link key={t} to={`/all?tag=${encodeURIComponent(t)}`} className="chip">
-                  #{t}
+                  #{tagLabel(t, locale)}
                 </Link>
               ))}
             </div>

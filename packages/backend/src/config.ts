@@ -9,6 +9,32 @@ export const REPO_ROOT = path.resolve(import.meta.dirname, "../../..");
 
 const env = process.env;
 
+const modelConfigNames = new Set([
+  "LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL", "LLM_EXTRA_JSON", "LLM_VISION", "LLM_JSON_MODE",
+  "DEEPSEEK_BASE_URL", "DEEPSEEK_API_KEY", "DASHSCOPE_BASE_URL", "DASHSCOPE_API_KEY",
+  "ZHIPU_BASE_URL", "ZHIPU_API_KEY", "XIAOMI_MIMO_BASE_URL", "XIAOMI_MIMO_API_KEY",
+  "EMBEDDING_BASE_URL", "EMBEDDING_API_KEY", "EMBEDDING_MODEL",
+  "PREFILTER_MODEL", "SCORE_MODEL", "UNDERSTAND_MODEL", "SUMMARIZE_MODEL", "STRUCTURE_MODEL",
+  "GROUP_MODEL", "GROUP_REVIEW_MODEL", "DIGEST_MODEL", "REPORT_MODEL", "TRANSLATE_MODEL", "LOCALIZE_MODEL", "MONITOR_MODEL",
+  "TRANSLATION_REVIEW_MODEL", "TRANSLATION_REVIEW_ENABLED",
+]);
+const modelFileValues = new Map<string, string>();
+const modelConfigFile = path.resolve(REPO_ROOT, env.MODEL_CONFIG_FILE || ".env.models");
+if (existsSync(modelConfigFile)) {
+  const parsed = parseEnv(readFileSync(modelConfigFile, "utf8"));
+  for (const [name, value] of Object.entries(parsed)) {
+    if (value === undefined || !modelConfigNames.has(name) || env[name] !== undefined) continue;
+    env[name] = value;
+    modelFileValues.set(name, value);
+  }
+}
+
+/** 只报告来源，不返回文件内容或密钥；运行时显式改环境变量后仍识别为环境覆盖。 */
+export function modelConfigSource(name: string): "file" | "env" | null {
+  if (!modelConfigNames.has(name) || env[name] === undefined) return null;
+  return modelFileValues.has(name) && modelFileValues.get(name) === env[name] ? "file" : "env";
+}
+
 export const isProduction = env.NODE_ENV === "production";
 
 function str(name: string, fallback?: string): string {

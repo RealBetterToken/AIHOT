@@ -153,3 +153,52 @@ export function categoryLabel(key: string, locale: "zh" | "ru" | "en" = "zh"): s
 export function categorySection(key: string, locale: "zh" | "ru" | "en" = "zh"): string {
   return (CATEGORY_COPY[locale] as Record<string, readonly string[]>)[key]?.[1] ?? CATEGORIES.find((category) => category.key === key)?.section ?? key;
 }
+
+type Tag = (typeof CATEGORY_TAGS)[number] | (typeof TOPIC_TAGS)[number] | (typeof ENTITY_TAGS)[number];
+
+/** 标签的身份沿用中文词表，公开展示时才按阅读语言换显示名。 */
+const TAG_COPY = {
+  en: {
+    "教程/实践": "Tutorials/practice", "问题/踩坑": "Problems/pitfalls", "工具/Skill": "Tools/Skills", "开源/仓库": "Open source/repositories",
+    "大佬观点": "Expert opinions", "现象/趋势": "Trends", "产品更新": "Product updates", "模型发布": "Model releases",
+    "评测/基准": "Reviews/benchmarks", "安全/事故": "Security/incidents", "论文/研究": "Papers/research", "行业动态": "Industry news",
+    "非AI/通用工具": "General/non-AI tools", "其他": "Other", "工作流": "Workflows", "上下文/记忆": "Context/memory",
+    "Skills": "Skills", "MCP/工具调用": "MCP/tool use", "Hooks/自动化": "Hooks/automation", "多Agent": "Multi-agent",
+    "测试/验证": "Testing/verification", "代码评审": "Code review", "规范驱动": "Spec-driven development", "成本/额度": "Costs/usage limits",
+    "本地模型": "Local models", "开源模型": "Open-source models", "CLI/终端": "CLI/terminal", "IDE/编辑器": "IDE/editors", "Agent": "Agent",
+    "OpenAI": "OpenAI", "Anthropic": "Anthropic", "DeepSeek": "DeepSeek", "Google": "Google", "Cursor": "Cursor", "GitHub": "GitHub",
+    "Qwen": "Qwen", "Kimi": "Kimi", "智谱": "Zhipu", "MiniMax": "MiniMax",
+  },
+  ru: {
+    "教程/实践": "Руководства/практика", "问题/踩坑": "Проблемы/ошибки", "工具/Skill": "Инструменты/Skills", "开源/仓库": "Открытый код/репозитории",
+    "大佬观点": "Мнения экспертов", "现象/趋势": "Тенденции", "产品更新": "Обновления продуктов", "模型发布": "Релизы моделей",
+    "评测/基准": "Обзоры/бенчмарки", "安全/事故": "Безопасность/инциденты", "论文/研究": "Статьи/исследования", "行业动态": "Новости отрасли",
+    "非AI/通用工具": "Общие инструменты/без ИИ", "其他": "Другое", "工作流": "Рабочие процессы", "上下文/记忆": "Контекст/память",
+    "Skills": "Skills", "MCP/工具调用": "MCP/вызов инструментов", "Hooks/自动化": "Hooks/автоматизация", "多Agent": "Несколько агентов",
+    "测试/验证": "Тестирование/проверка", "代码评审": "Ревью кода", "规范驱动": "Разработка по спецификации", "成本/额度": "Стоимость/лимиты",
+    "本地模型": "Локальные модели", "开源模型": "Открытые модели", "CLI/终端": "CLI/терминал", "IDE/编辑器": "IDE/редакторы", "Agent": "Агент",
+    "OpenAI": "OpenAI", "Anthropic": "Anthropic", "DeepSeek": "DeepSeek", "Google": "Google", "Cursor": "Cursor", "GitHub": "GitHub",
+    "Qwen": "Qwen", "Kimi": "Kimi", "智谱": "Zhipu", "MiniMax": "MiniMax",
+  },
+} satisfies Record<"en" | "ru", Record<Tag, string>>;
+
+/** 品牌名保留通用写法，中文附名在非中文界面使用对应的国际名称。 */
+const ENTITY_COPY: Readonly<Record<string, string>> = {
+  qwen: "Qwen", kimi: "Kimi / Moonshot AI", zhipu: "Zhipu GLM",
+  hunyuan: "Tencent Hunyuan", doubao: "ByteDance Doubao", baidu: "Baidu ERNIE",
+};
+
+export function entityLabel(id: string, locale: "zh" | "ru" | "en" = "zh"): string {
+  const translated = locale !== "zh" && Object.hasOwn(ENTITY_COPY, id) ? ENTITY_COPY[id] : undefined;
+  const configured = Object.hasOwn(ENTITIES, id) ? ENTITIES[id]?.name : undefined;
+  return translated ?? configured ?? IDENTITY_LEXICON.find((entry) => entry.id === id)?.name ?? id;
+}
+
+export function tagLabel(tag: string, locale: "zh" | "ru" | "en" = "zh"): string {
+  if (tag.startsWith("entity:")) return entityLabel(tag.slice(7), locale);
+  if (locale === "zh") return tag;
+  const copy = TAG_COPY[locale] as Record<string, string>;
+  const translated = Object.hasOwn(copy, tag) ? copy[tag] : undefined;
+  const canonical = Object.hasOwn(TAG_SYNONYMS, tag) ? TAG_SYNONYMS[tag] : undefined;
+  return translated ?? (canonical && Object.hasOwn(copy, canonical) ? copy[canonical] : undefined) ?? tag;
+}

@@ -7,9 +7,25 @@
       "kind": "公告",
       "title": "网站上线",
       "body": [
-        "用 AIHOT 开源框架搭起了这个站：自动盯住信源、精选、把同一件事归到一起，每天早上出一份日报。",
+        "用开源框架搭起了这个站：自动盯住信源、精选、把同一件事归到一起，每天早上出一份日报。",
         "这是示例条目。新条目写在 industry/changelog.json 的最前面，并把 latestVersion 改成它的日期和时间，导航上就会出现提醒红点。"
-      ]
+      ],
+      "translations": {
+        "en": {
+          "title": "Site launched",
+          "body": [
+            "This site was built with an open-source framework: it automatically follows sources, selects stories, groups coverage of the same event and publishes a daily briefing every morning.",
+            "This is a sample entry. Add new entries at the beginning of industry/changelog.json and set latestVersion to their date and time to show a notification dot in navigation."
+          ]
+        },
+        "ru": {
+          "title": "Сайт запущен",
+          "body": [
+            "Сайт создан на основе открытой платформы: он автоматически следит за источниками, отбирает материалы, объединяет публикации об одном событии и каждое утро выпускает обзор.",
+            "Это пример записи. Добавляйте новые записи в начало industry/changelog.json и задавайте latestVersion их дату и время — в навигации появится точка уведомления."
+          ]
+        }
+      }
     }
   ]
 }

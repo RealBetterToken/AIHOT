@@ -11,22 +11,15 @@ import { setChangelogSeen } from "../lib/local-state";
 import { AsideCard, ReadingLayout } from "../components/ui/Page";
 import { IconChevronRight } from "../components/icons";
 import { Inline, dateHeading } from "../features/changelog/text";
+import type { ChangelogData, ChangelogRelease as Release } from "@aihot/contracts/changelog";
 
 /** Shared caches may keep this page for five minutes. */
 export function headers() {
   return { "Cache-Control": "public, max-age=0, s-maxage=300, stale-while-revalidate=600" };
 }
 
-interface Release {
-  date: string;
-  time: string;
-  kind: "更新" | "优化" | "公告" | "下线";
-  title: string;
-  body: string[];
-}
-
 export async function loader({ request }: { request: Request }) {
-  return apiGet<{ latestVersion: string; releases: Release[] }>("/api/site/changelog", { request, signal: request.signal });
+  return apiGet<ChangelogData>("/api/site/changelog", { request, signal: request.signal });
 }
 
 export function meta({ location }: { location: { pathname: string } }) {
@@ -161,8 +154,8 @@ export default function ChangelogPage() {
                           </span>
                         </div>
                         <article className="min-w-0 sm:border-s sm:border-line sm:ps-8">
-                          <h3 className="text-[15px] font-bold leading-snug text-ink">{translateKnown(locale, r.title)}</h3>
-                          <ReleaseBody lines={r.body} />
+                          <h3 className="text-[15px] font-bold leading-snug text-ink">{translateKnown(locale, r.translations?.[locale]?.title ?? r.title)}</h3>
+                          <ReleaseBody lines={r.translations?.[locale]?.body ?? r.body} />
                         </article>
                       </li>
                     ))}

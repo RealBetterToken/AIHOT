@@ -3,7 +3,7 @@
 // and the SelectBench runs that compare models on the same batch. A switch is audited and applies to
 // new work only.
 import { sql } from "../db.ts";
-import { CAPABILITIES, invalidateModelCache, modelSources, type Capability, type CapabilityKey } from "../editorial/models.ts";
+import { CAPABILITIES, invalidateModelCache, modelSources, validateCapabilityModel, type Capability, type CapabilityKey } from "../editorial/models.ts";
 import { MODELS } from "../providers/llm.ts";
 import { audit } from "./auth.ts";
 
@@ -81,7 +81,7 @@ export async function modelsOverview(days = 7) {
         estimate: priced(u),
       })),
   }));
-  const choices = Object.values(MODELS).map((m) => ({ key: m.key, service: m.service, vision: !!m.vision }));
+  const choices = Object.values(MODELS).map((m) => ({ key: m.key, service: m.service, vision: !!m.vision, translationOnly: !!m.translationOnly }));
   return { days, capabilities, choices, history, benches };
 }
 
@@ -90,10 +90,11 @@ export async function switchModel(capability: string, model: string | null, reas
   const c = (CAPABILITIES as Record<string, Capability>)[capability];
   if (!c) throw Object.assign(new Error("unknown capability"), { statusCode: 400 });
   if (!reason.trim()) throw Object.assign(new Error("a reason is required"), { statusCode: 400 });
-  if (model !== null) {
-    const spec = MODELS[model];
-    if (!spec) throw Object.assign(new Error("unknown model"), { statusCode: 400 });
-    if (!!c.vision !== !!spec.vision) throw Object.assign(new Error(c.vision ? "this capability needs a vision model" : "a vision-only model cannot do this"), { statusCode: 400 });
+  try {
+    const selected = model ?? (process.env[c.env] || c.default);
+    validateCapabilityModel(capability as CapabilityKey, selected, model === null ? c.env : undefined);
+  } catch (error) {
+    throw Object.assign(error as Error, { statusCode: 400 });
   }
   const before = (await modelSources())[capability];
   if (model === null) await sql`DELETE FROM settings WHERE key = ${`models.${capability}`}`;

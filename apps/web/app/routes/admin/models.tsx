@@ -26,8 +26,8 @@ interface Usage {
 
 interface Models {
   days: number;
-  capabilities: Array<{ key: string; label: string; env: string; defaultModel: string; vision: boolean; current: { model: string; source: "admin" | "env" | "default" }; usage: Usage[] }>;
-  choices: Array<{ key: string; service: string; vision: boolean }>;
+  capabilities: Array<{ key: string; label: string; env: string; defaultModel: string; vision: boolean; current: { model: string; source: "admin" | "env" | "default"; error?: string }; usage: Usage[] }>;
+  choices: Array<{ key: string; service: string; vision: boolean; translationOnly: boolean }>;
   history: Array<{ at: string; actor: string; subject: string; reason: string | null; before: { model: string; source: string } | null; after: { model: string; source: string } | null }>;
   benches: Array<{ id: string; label: string; sample_size: number; prompt_version: string | null; models: string[]; created_at: string }>;
 }
@@ -65,6 +65,7 @@ export default function ModelsAdmin({ loaderData: m }: Route.ComponentProps) {
                   {c.label}
                   <span className="font-mono text-[12px] font-normal text-ink-3">{c.current.model}</span>
                   <Badge tone={c.current.source === "admin" ? "accent" : "muted"}>{SOURCE_LABEL[c.current.source]}</Badge>
+                  {c.current.error && <span className="text-[12px] font-normal text-hot">{c.current.error}</span>}
                 </span>
               }
               right={
@@ -177,6 +178,7 @@ export default function ModelsAdmin({ loaderData: m }: Route.ComponentProps) {
           <Select value={choice} onChange={(e) => setChoice(e.target.value)}>
             {m.choices
               .filter((x) => x.vision === !!target?.vision)
+              .filter((x) => !x.translationOnly || target?.key === "translate" || target?.key === "localize")
               .map((x) => (
                 <option key={x.key} value={x.key}>
                   {x.key}（{x.service}）

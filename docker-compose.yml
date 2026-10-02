@@ -2,6 +2,14 @@
 # docker compose --profile https up -d --build   → HTTPS for SITE_DOMAIN through Caddy
 name: aihot
 
+# 主 .env 控制安全阀，不能被第二份模型 env_file 覆盖。
+x-model-safety: &model-safety
+  COLLECT_ENABLED: ${COLLECT_ENABLED:-false}
+  MODEL_CALLS_ENABLED: ${MODEL_CALLS_ENABLED:-false}
+  FEISHU_CONTENT_PUSH_ENABLED: ${FEISHU_CONTENT_PUSH_ENABLED:-false}
+  FEISHU_INTERNAL_ENABLED: ${FEISHU_INTERNAL_ENABLED:-false}
+  INDEXNOW_SUBMIT_ENABLED: ${INDEXNOW_SUBMIT_ENABLED:-false}
+
 x-app: &app
   build: .
   image: aihot-app
@@ -43,9 +51,13 @@ services:
 
   api:
     <<: *app
+    env_file:
+      - path: .env
+      - path: ${MODEL_CONFIG_FILE:-.env.models}
+        required: false
     command: ["node", "apps/api/src/main.ts"]
     environment:
-      <<: *app-env
+      <<: [*app-env, *model-safety]
       API_HOST: 0.0.0.0
       API_PORT: "3001"
     depends_on:
@@ -54,6 +66,12 @@ services:
 
   worker:
     <<: *app
+    env_file:
+      - path: .env
+      - path: ${MODEL_CONFIG_FILE:-.env.models}
+        required: false
+    environment:
+      <<: [*app-env, *model-safety]
     command: ["node", "apps/worker/src/main.ts"]
     # On stop the worker lets a paid call in flight finish (STOP_TIMEOUT_MS, 195 s); Docker's default
     # 10 s would kill it mid-call and leave "outcome unknown" receipts that are paid for again.

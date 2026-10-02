@@ -38,6 +38,23 @@ async function article(selected = true) {
 
 const get = (url: string, headers: Record<string, string> = {}) => app.inject({ method: "GET", url, headers });
 
+test("关于页最近精选按请求语言读标题，缺译标注实际语言并即时隐藏撤回内容", async () => {
+  const a = await article();
+  await sql`UPDATE publications SET timeline_at = '2099-01-01' WHERE article_id = ${a.id}`;
+  const russian = await get("/api/site/stats?lang=ru");
+  const latest = russian.json().latest.find((item: any) => item.id === a.id);
+  assert.equal(latest.title, a.fields.title);
+  assert.equal(latest.textLocale, "ru");
+  const chinese = await get("/api/site/stats?lang=zh");
+  assert.equal(chinese.json().latest.find((item: any) => item.id === a.id).title, a.copy.title);
+  assert.notEqual(russian.headers.etag, chinese.headers.etag);
+  const english = await get("/api/site/stats?lang=en");
+  assert.equal(english.json().latest.find((item: any) => item.id === a.id).textLocale, "zh");
+  assert.equal((await get("/api/site/stats?lang=de")).statusCode, 400);
+  await sql`UPDATE publications SET visibility = 'withdrawn' WHERE article_id = ${a.id}`;
+  assert.ok(!(await get("/api/site/stats?lang=ru")).json().latest.some((item: any) => item.id === a.id));
+});
+
 test("v1 and site cards use Russian while Chinese remains the default and ETags vary", async () => {
   const a = await article();
   const russian = await get("/api/v1/items?lang=ru&limit=100");

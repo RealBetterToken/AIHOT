@@ -1,4 +1,5 @@
 import { Wordmark } from "../components/Logo";
+import { tagLabel } from "@aihot/industry/taxonomy";
 import { Timeline } from "../features/feed/Timeline";
 import { HotTopics } from "../features/feed/HotTopics";
 import { CategoryTabs, SearchField, SearchIconLink } from "../features/feed/Filters";
@@ -51,7 +52,7 @@ export default function Home() {
   const t = useT();
   const locale = useLocale();
   const { data, filters } = useLoaderData<typeof loader>();
-  const title = filters.tag ? `#${filters.tag}` : t("精选");
+  const title = filters.tag ? `#${tagLabel(filters.tag, locale)}` : t("精选");
   return (
     <div className="pb-6">
       {/* Phones: brand bar, today's hot topics, then the feed under "最新精选". */}

@@ -24,6 +24,12 @@ export function localePath(path: string, locale: Locale): string {
   return `/${locale}${bare === "/" ? "" : /^\/[?#]/.test(bare) ? bare.slice(1) : bare}`;
 }
 
+/** 原文页切到另一种阅读语言时，回到该语言的正文；其他路径与参数保持不变。 */
+export function languageSwitchPath(path: string, locale: Locale): string {
+  const target = localeFromPath(path) === locale ? path : stripLocale(path).replace(/^(\/items\/[^/?#]+)\/original(?=[?#]|$)/, "$1");
+  return localePath(target, locale);
+}
+
 export function apiPath(path: string, locale: Locale): string {
   const url = new URL(path, "http://site.local");
   url.searchParams.set("lang", locale);
