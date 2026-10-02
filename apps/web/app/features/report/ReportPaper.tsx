@@ -8,7 +8,7 @@ import { localeFromPath, localePath, apiPath } from "../../i18n/locale.ts";
 // Rules are hairlines in two weights: line-strong closes the masthead and underlines a page's heading
 // and the neighbours; line parts stories, columns and list rows. Nothing is set in solid ink. Stories
 // sit in rows of two whose rules run across the page, each story as tall as its neighbour.
-import { SITE } from "@aihot/industry/site";
+import { SITE, withSubject } from "@aihot/industry/site";
 import { useState, type ReactNode } from "react";
 
 import type { ReportCitation, ReportDetail, ReportNavigationEntry } from "@aihot/contracts/site";
@@ -44,9 +44,9 @@ function Masthead({ report, index }: { report: ReportDetail; index: ReportNaviga
         <div className="flex min-w-0 flex-col justify-center">
           <h1 id="report-start">
             <span className="sr-only">
-              AI {translateKnown(locale, KIND_LABEL[report.kind])} · {dateLine(report.kind, report.key, locale)}
+              {withSubject(translateKnown(locale, KIND_LABEL[report.kind]))} · {dateLine(report.kind, report.key, locale)}
             </span>
-            <Nameplate which={report.kind} className="block h-[54px] w-auto @[520px]:h-[74px] @[880px]:h-[98px] @[1040px]:h-[112px]" />
+            <Nameplate which={report.kind} />
           </h1>
           <p className="mt-3 text-[11.5px] tracking-[0.36em] text-ink-4 @[880px]:mt-4 @[880px]:text-[12.5px]">{SITE.name.toUpperCase()}</p>
         </div>
@@ -327,7 +327,7 @@ const COLUMNS = "@[760px]:columns-2 @[760px]:gap-x-12 @[760px]:[column-rule:1px_
 function Neighbours({ report, index }: { report: ReportDetail; index: ReportNavigationEntry[] }) {
   const t = useT();
   const locale = useLocale();
-  const titleOf = (key: string) => index.find((e) => e.key === key)?.title ?? `AI ${translateKnown(locale, KIND_LABEL[report.kind])} · ${key}`;
+  const titleOf = (key: string) => index.find((e) => e.key === key)?.title ?? `${withSubject(translateKnown(locale, KIND_LABEL[report.kind]))} · ${key}`;
   const cell = "group flex min-w-0 flex-col py-6";
   const title = "mt-2.5 line-clamp-2 text-[16px] font-bold leading-[1.5] text-ink transition-colors group-hover:text-accent @[880px]:text-[18px]";
   return (
@@ -363,7 +363,7 @@ function History({ report, index }: { report: ReportDetail; index: ReportNavigat
   if (others.length === 0) return null;
   return (
     <section id="report-history" className="scroll-mt-6 pt-12">
-      <Kicker>{t("往期 AI {report}", { report: translateKnown(locale, KIND_LABEL[report.kind]) })}</Kicker>
+      <Kicker>{t("往期{report}", { report: withSubject(translateKnown(locale, KIND_LABEL[report.kind])) })}</Kicker>
       <ul className="mt-3">
         {others.map((e) => (
           <li key={e.key}>

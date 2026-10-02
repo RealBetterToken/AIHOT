@@ -1,7 +1,7 @@
 // Public read layer, item level. Every exit (site API, v1, RSS, MCP, sitemap) reads
 // items through these functions; visibility, release gate and body licences are applied here.
 import { DEFAULT_LOCALE, type Locale } from "@aihot/contracts/locale";
-import { sourceLanguageSql } from "../content/language.ts";
+import { sourceLanguageSql, translationMatchesLocaleSql } from "../content/language.ts";
 import type { CategoryKey, ChannelKey } from "@aihot/contracts/taxonomy";
 import type { FeedItemSummary, ItemSummary, MediaView, SourceKind, XPostView } from "@aihot/contracts/site";
 import { sql, type Db } from "../db.ts";
@@ -12,6 +12,7 @@ export interface ItemRow {
   id: string;
   revision: number;
   title: string;
+  text_locale?: Locale;
   original_title: string | null;
   summary: string | null;
   reason: string | null;
@@ -48,7 +49,7 @@ export interface ItemRow {
   story_public_id: string | null;
   story_title: string | null;
   zh_text: string | null;
-  /** 按请求语言及英文回退选择的引用帖译文，字段名保留以兼容内部投影。 */
+  /** 请求语言的引用帖译文，字段名保留以兼容内部投影。 */
   quoted_zh: string | null;
 }
 
@@ -69,26 +70,28 @@ export const API_ITEM_COLUMNS = sql`
   p.published_at, p.discovered_at, p.category, p.score, p.selected, p.reason`;
 export const API_ITEM_FROM = sql`FROM publications p JOIN sources s ON s.id = p.source_id`;
 
-/** 请求语言优先，缺失时英文回退；原文已是请求语言时直接使用原文。 */
+/** 只读取请求语言；原文已是请求语言时直接使用原文。 */
 export function bodyTranslationJoins(locale: Locale = DEFAULT_LOCALE, completeOnly = false) {
   const quoted = sql`coalesce(a.x_post->'quoted'->>'text', '')`;
   const quoteLanguage = sourceLanguageSql(sql`NULL::text`, quoted);
   return sql`
     LEFT JOIN LATERAL (
       SELECT t.* FROM translations t WHERE t.article_id = p.article_id AND t.revision >= a.revision
-        AND t.lang IN (${locale}, 'en') AND ${sourceLanguageSql()} <> ${locale}
+        AND t.lang = ${locale} AND ${sourceLanguageSql()} <> ${locale}
+        AND (NOT t.complete OR ${translationMatchesLocaleSql(locale, sql`t.body_html`)})
         AND coalesce(t.body_text, '') <> '' ${completeOnly ? sql`AND t.complete` : sql``}
       ORDER BY (t.lang = ${locale}) DESC LIMIT 1
     ) tr ON true
     LEFT JOIN LATERAL (
       SELECT text AS text_zh FROM (
         SELECT q.lang, q.text, q.text_hash, 0 AS priority FROM quote_translations_lang q
-        WHERE q.tweet_id = substring(a.x_post->'quoted'->>'url' from '/status/([0-9]+)') AND q.lang IN (${locale}, 'en')
+        WHERE q.tweet_id = substring(a.x_post->'quoted'->>'url' from '/status/([0-9]+)') AND q.lang = ${locale}
         UNION ALL
         SELECT 'zh', q.text_zh, q.text_hash, 1 FROM quote_translations q
         WHERE q.tweet_id = substring(a.x_post->'quoted'->>'url' from '/status/([0-9]+)') AND ${locale} = 'zh'
       ) q WHERE ${quoteLanguage} <> ${locale}
         AND q.text_hash = encode(sha256(convert_to(${quoted}, 'UTF8')), 'hex')
+        AND ${translationMatchesLocaleSql(locale, sql`q.text`)}
       ORDER BY (q.lang = ${locale}) DESC, priority LIMIT 1
     ) qt ON p.channel = 'x'`;
 }
@@ -181,6 +184,7 @@ export function toItemSummary(row: ItemRow): ItemSummary {
     id: row.id,
     revision: row.revision,
     title: row.title,
+    textLocale: row.text_locale ?? "zh",
     originalTitle: row.original_title,
     summary: row.summary,
     reason: row.selected ? row.reason : null,
@@ -210,7 +214,7 @@ export function toItemSummary(row: ItemRow): ItemSummary {
 export function toFeedItemSummary(row: ItemRow): FeedItemSummary {
   const item = toItemSummary(row);
   return {
-    id: item.id, title: item.title, summary: item.summary, reason: item.reason,
+    id: item.id, title: item.title, textLocale: item.textLocale, summary: item.summary, reason: item.reason,
     source: { name: item.source.name }, publishedAt: item.publishedAt, timelineAt: item.timelineAt,
     category: item.category, tags: item.tags, score: item.score, selected: item.selected, channel: item.channel,
     x: item.x ? {

@@ -3,7 +3,8 @@
 // cached for a minute, so a switch applies to the next call without a restart; a changed model only
 // affects work done from then on (history is not re-judged).
 import { sql } from "../db.ts";
-import { MODELS } from "../providers/llm.ts";
+import { credential, modelConfigSource } from "../config.ts";
+import { MODELS, type ModelSpec } from "../providers/llm.ts";
 
 export interface Capability {
   label: string;
@@ -24,8 +25,9 @@ export const CAPABILITIES = {
   groupReview: { label: "归组复核（相似度不高的合并、两个事件的合并，写入前再读一遍；最好换一家模型）", env: "GROUP_REVIEW_MODEL", default: "default", purposes: ["group_review", "group_story_review"] },
   digest: { label: "事件综述", env: "DIGEST_MODEL", default: "default", purposes: ["story_digest"] },
   report: { label: "日报、周报、月报", env: "REPORT_MODEL", default: "default", purposes: ["report_lead", "report_daily", "report_weekly", "report_monthly"] },
-  translate: { label: "精选全文翻译（含引用帖）", env: "TRANSLATE_MODEL", default: "default", purposes: ["translate_body", "translate_quoted"] },
-  localize: { label: "多语言本地化（文章、事件和报刊的俄语、英语读者文字）", env: "LOCALIZE_MODEL", default: "default", purposes: ["localize_article", "localize_story", "localize_report"] },
+  translate: { label: "公开全文翻译（含引用帖）", env: "TRANSLATE_MODEL", default: "default", purposes: ["translate_body", "translate_quoted"] },
+  localize: { label: "多语言本地化（文章、事件和报刊的中文、俄语、英语读者文字）", env: "LOCALIZE_MODEL", default: "default", purposes: ["localize_article", "localize_story", "localize_report"] },
+  translationReview: { label: "翻译审校（启用后对照原文修正文风和术语）", env: "TRANSLATION_REVIEW_MODEL", default: "default", purposes: ["translation_review"] },
   monitor: { label: "Codex 重置公告识别", env: "MONITOR_MODEL", default: "default", purposes: ["monitor.recognize", "monitor.context"] },
 } satisfies Record<string, Capability>;
 
@@ -37,7 +39,7 @@ async function overrides(): Promise<Record<string, string>> {
   if (cache && Date.now() - cache.at < 60_000) return cache.overrides;
   const rows = await sql<{ key: string; value: { model?: string } }[]>`SELECT key, value FROM settings WHERE key LIKE 'models.%'`;
   const map: Record<string, string> = {};
-  for (const r of rows) if (r.value?.model && MODELS[r.value.model]) map[r.key.slice("models.".length)] = r.value.model;
+  for (const r of rows) if (r.value?.model) map[r.key.slice("models.".length)] = r.value.model;
   cache = { at: Date.now(), overrides: map };
   return map;
 }
@@ -46,21 +48,88 @@ export function invalidateModelCache() {
   cache = null;
 }
 
-/** The model a capability uses now: admin switch, else environment, else the code default. */
-export async function modelFor(capability: CapabilityKey): Promise<string> {
+/** 文件、环境变量和后台都使用同一校验，避免非法配置悄悄退回另一个模型。 */
+export function validateCapabilityModel(capability: CapabilityKey, model: string, source = `models.${capability}`): ModelSpec {
   const c: Capability = CAPABILITIES[capability];
-  const chosen = (await overrides())[capability] ?? process.env[c.env] ?? c.default;
-  return MODELS[chosen] ? chosen : c.default;
+  const spec = Object.hasOwn(MODELS, model) ? MODELS[model] : undefined;
+  if (!spec) throw new Error(`${source} 配置了未注册模型 ${model}`);
+  if (spec.translationOnly && capability !== "translate" && capability !== "localize") {
+    throw new Error(`${source} 的 ${model} 仅支持翻译和多语言本地化`);
+  }
+  if (model !== "default" && !!c.vision !== !!spec.vision) throw new Error(`${source} 的 ${model} 与环节 ${capability} 的视觉能力不匹配`);
+  return spec;
 }
 
-/** Where the current choice comes from, for the admin page. */
-export async function modelSources(): Promise<Record<string, { model: string; source: "admin" | "env" | "default" }>> {
+function selection(capability: CapabilityKey, admin: Record<string, string>) {
+  const c: Capability = CAPABILITIES[capability];
+  const configuredModel = process.env[c.env] || c.default;
+  const model = admin[capability] ?? configuredModel;
+  const configuredSource = process.env[c.env] ? modelConfigSource(c.env) ?? "env" : "default";
+  const source = admin[capability] ? "admin" as const : configuredSource === "default" ? "default" as const : "env" as const;
+  return { model, source, configuredModel, configuredSource, overridden: !!admin[capability] && model !== configuredModel };
+}
+
+/** 后台覆盖 > 显式环境变量 > 模型文件 > 代码默认，只影响之后的任务。 */
+export async function modelFor(capability: CapabilityKey): Promise<string> {
+  const chosen = selection(capability, await overrides());
+  validateCapabilityModel(capability, chosen.model, chosen.source === "admin" ? `后台 models.${capability}` : CAPABILITIES[capability].env);
+  return chosen.model;
+}
+
+export interface ModelSource {
+  model: string;
+  source: "admin" | "env" | "default";
+  error?: string;
+}
+
+function modelError(capability: CapabilityKey, model: string, source: string): string | undefined {
+  try {
+    validateCapabilityModel(capability, model, source);
+    return undefined;
+  } catch (error) {
+    return (error as Error).message;
+  }
+}
+
+/** 展示非法旧值供管理员修复，不影响后台读取；执行任务仍由 modelFor 严格校验。 */
+export async function modelSources(): Promise<Record<string, ModelSource>> {
   const o = await overrides();
-  const out: Record<string, { model: string; source: "admin" | "env" | "default" }> = {};
-  for (const [key, c] of Object.entries(CAPABILITIES) as Array<[string, Capability]>) {
-    if (o[key]) out[key] = { model: o[key]!, source: "admin" };
-    else if (process.env[c.env] && MODELS[process.env[c.env]!]) out[key] = { model: process.env[c.env]!, source: "env" };
-    else out[key] = { model: c.default, source: "default" };
+  const out: Record<string, ModelSource> = {};
+  for (const key of Object.keys(CAPABILITIES) as CapabilityKey[]) {
+    const { model, source } = selection(key, o);
+    const error = modelError(key, model, source === "admin" ? `后台 models.${key}` : CAPABILITIES[key].env);
+    out[key] = { model, source, ...(error ? { error } : {}) };
   }
   return out;
+}
+
+/** 启动前只读检查：不调用模型、不修改 settings，也不输出密钥或 URL 中的凭据。 */
+export async function modelDiagnostics() {
+  const o = await overrides();
+  return (Object.keys(CAPABILITIES) as CapabilityKey[]).map((capability) => {
+    const chosen = selection(capability, o);
+    const error = modelError(capability, chosen.model, chosen.source === "admin" ? `后台 models.${capability}` : CAPABILITIES[capability].env);
+    const configuredError = modelError(capability, chosen.configuredModel, CAPABILITIES[capability].env);
+    const spec = Object.hasOwn(MODELS, chosen.model) ? MODELS[chosen.model] : undefined;
+    const rawUrl = spec ? credential("models", spec.baseUrlEnv) : null;
+    let baseUrl: string | null = null;
+    if (rawUrl) {
+      try {
+        const safeUrl = new URL(rawUrl);
+        safeUrl.username = "";
+        safeUrl.password = "";
+        safeUrl.search = "";
+        safeUrl.hash = "";
+        baseUrl = safeUrl.toString();
+      } catch {
+        baseUrl = "（无效 URL）";
+      }
+    }
+    const credentialConfigured = !!spec && !!credential("models", spec.apiKeyEnv);
+    return {
+      capability, ...chosen, ...(error ? { error } : {}), ...(configuredError ? { configuredError } : {}),
+      service: spec?.service ?? null, baseUrl, credentialConfigured,
+      providerConfigured: !error && !!rawUrl && credentialConfigured && !!spec?.model,
+    };
+  });
 }

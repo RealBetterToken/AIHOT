@@ -1,6 +1,7 @@
 // Reader state kept only in this browser; nothing about a reader leaves it. Storage failures degrade
 // silently. Keep the keys and formats once readers have data under them.
 import { useSyncExternalStore } from "react";
+import { isLocale, type Locale } from "@aihot/contracts/locale";
 
 export const KEYS = {
   starred: "aihot-starred-items",
@@ -24,6 +25,8 @@ export interface LocalStarredItem {
   publishedAt: string | null;
   score: number | null;
   aiSelected: boolean;
+  /** 快照文本实际使用的语言；旧收藏没有记录时保留未指定。 */
+  textLocale?: Locale;
 }
 
 function storage(kind: "local" | "session"): Storage | null {
@@ -116,6 +119,7 @@ function normalizeStarred(v: Record<string, unknown>): LocalStarredItem {
     publishedAt: typeof v.publishedAt === "string" ? v.publishedAt : null,
     score: typeof v.score === "number" ? v.score : null,
     aiSelected: v.aiSelected === true,
+    ...(isLocale(v.textLocale) ? { textLocale: v.textLocale } : {}),
   };
 }
 

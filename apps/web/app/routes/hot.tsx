@@ -21,7 +21,7 @@ export function meta({ location }: { location: { pathname: string } }) {
   const t = createT(locale);
   return pageMeta({ locale,
     title: t("热点榜"),
-    description: t("过去 48 小时 AI 圈讨论最多的 10 个事件：热度指数、趋势与组成热度的公开来源。"),
+    description: t("过去 48 小时 AI 编程社区讨论最多的 10 个事件：热度指数、趋势与组成热度的公开来源。"),
     path: "/hot",
     image: "/og/pages/hot.png",
   });
@@ -252,7 +252,7 @@ export default function HotPage() {
             {t("实时热度")}
           </div>
           <h1 className="mt-1.5 text-[24px] font-bold leading-[1.3] tracking-[-0.01em] text-ink lg:text-[26px]">{t("热点榜")}</h1>
-          <p className="mt-1.5 text-[13.5px] text-ink-3">{t("过去 {hours} 小时，AI 圈讨论最多的 {count} 件事", { hours: hot.windowHours, count: hot.entries.length || 10 })}</p>
+          <p className="mt-1.5 text-[13.5px] text-ink-3">{t("过去 {hours} 小时，AI 编程社区讨论最多的 {count} 件事", { hours: hot.windowHours, count: hot.entries.length || 10 })}</p>
         </div>
         {hot.computedAt && (
           <p className="text-[12px] text-ink-4">

@@ -25,7 +25,8 @@ const provider = await stub(async (_hit, req) => {
   calls.push(input);
   if (insufficientBalance) return new Reply(402, { error: { message: "Insufficient Balance" } });
   if (held) { held.asked.open(); await held.release.promise; }
-  const t = input.segments.map((s: string) => failRussian && input.targetLanguage === "俄语" ? 42 : `${input.targetLanguage}译文 ${s}`);
+  const prefix = input.targetLanguage === '俄语' ? 'Русский перевод' : input.targetLanguage === '英语' ? 'English translation' : '完整译文';
+  const t = input.segments.map(() => failRussian && input.targetLanguage === "俄语" ? 42 : prefix);
   return { choices: [{ message: { content: JSON.stringify({ t }) } }], usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 } };
 });
 process.env.DEEPSEEK_BASE_URL = `${provider.url}/v1`;
@@ -108,7 +109,10 @@ test("失败次数按语言独立计数，俄语三次失败不影响中文成�
   const id = await article('en',`Retry body ${T}.`);
   failRussian = true;
   try {
-    for (let i=0;i<3;i++) await translatePending({ limit: i===0 ? 2 : 1 });
+    for (let i=0;i<3;i++) {
+      if(i>0) await sql`UPDATE translation_attempts_lang SET updated_at=now()-interval '16 minutes' WHERE article_id=${id} AND lang='ru'`;
+      await translatePending({ limit: i===0 ? 2 : 1, articleIds:[id] });
+    }
   } finally { failRussian=false; }
   const rows = await sql`SELECT lang,attempts,outcome FROM translation_attempts_lang WHERE article_id=${id} ORDER BY lang`;
   assert.deepEqual(rows.map(r=>({...r})),[{lang:'ru',attempts:3,outcome:'failed'},{lang:'zh',attempts:1,outcome:'translated'}]);
@@ -117,7 +121,7 @@ test("失败次数按语言独立计数，俄语三次失败不影响中文成�
   assert.ok(run.done.every(r=>r.articleId!==id),'已达到三次的语言不会继续尝试');
 });
 
-test("公开详情和全文 RSS 按 locale、英文、原文回退，并忽略过期译文", async () => {
+test("公开详情和全文 RSS 只使用请求语言或原文，并忽略过期译文", async () => {
   const id = await article('zh',`原文正文 ${T}。`);
   await sql`INSERT INTO translations(article_id,lang,revision,body_html,body_text,complete,origin)
     VALUES(${id},'en',1,'<h2>English heading</h2><p>English fallback body.</p>','English fallback body.',true,'model'),
@@ -131,9 +135,9 @@ test("公开详情和全文 RSS 按 locale、英文、原文回退，并忽略�
   assert.ok((await itemFeed('selected-full',null,new Date(),'ru')).includes('Русский перевод'));
   await sql`UPDATE translations SET revision=0 WHERE article_id=${id} AND lang='ru'`;
   const fallback = await detail(id,'ru');
-  assert.equal(fallback.bodyLanguage,'en');
-  assert.ok(fallback.body?.localized?.includes('English fallback body'));
-  assert.ok((await itemFeed('selected-full',null,new Date(),'ru')).includes('English fallback body'));
+  assert.equal(fallback.bodyLanguage,'original');
+  assert.ok(fallback.body?.original?.includes('原文正文'));
+  assert.ok(!(await itemFeed('selected-full',null,new Date(),'ru')).includes('English fallback body'));
   await sql`DELETE FROM translations WHERE article_id=${id} AND lang='en'`;
   assert.ok((await detail(id,'ru')).body?.original?.includes('原文正文'));
   assert.equal((await detail(id,'ru')).bodyLanguage,'original');
@@ -147,10 +151,10 @@ test("X 正文和引用帖按语言读取，中文引用复用旧缓存，原语
     VALUES(${id},'ru',1,'<p>Русский пост.</p>','Русский пост.',true,'model')`;
   await sql`INSERT INTO quote_translations(tweet_id,text_hash,text_zh) VALUES(${tweetId},${sha256(quoted)},'旧表中文引用')`;
   const start=calls.length;
-  await translateQuotes();
+  await translateQuotes({articleIds:[id]});
   assert.deepEqual(calls.slice(start).map(c=>c.targetLanguage),['俄语']);
   assert.equal((await detail(id,'zh')).x?.quoted?.translation,'旧表中文引用');
-  assert.ok((await detail(id,'ru')).x?.quoted?.translation?.includes('俄语译文'));
+  assert.ok((await detail(id,'ru')).x?.quoted?.translation?.includes('Русский перевод'));
   assert.equal((await detail(id,'en')).x?.quoted?.translation,null);
   const raw = await loadItemDetail(id,new Date(),'ru');
   assert.equal(raw.kind,'found');
@@ -158,7 +162,7 @@ test("X 正文和引用帖按语言读取，中文引用复用旧缓存，原语
   assert.ok((await detail(id,'ru')).body?.localized?.includes('Русский пост'));
   assert.ok((await detail(id,'en')).body?.original?.includes('Selected post'));
   const before=calls.length;
-  await translateQuotes();
+  await translateQuotes({articleIds:[id]});
   assert.equal(calls.length,before,'各语言共享引用缓存不重复调用');
 });
 

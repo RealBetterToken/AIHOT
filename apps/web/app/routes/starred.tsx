@@ -2,13 +2,13 @@ import { Link } from "../lib/locale-links";
 
 import { Presence } from "../components/ui/Presence";
 import { IconBookmark, IconDownload, IconClose } from "../components/icons";
-import { type Locale, apiPath, localeFromPath } from "../i18n/locale";
+import { type Locale, apiPath, localeFromPath, HTML_LANG } from "../i18n/locale";
 import { createT, useT, useLocale } from "../i18n/index";
 import { SITE } from "@aihot/industry/site";
 import { useEffect, useRef, useState } from "react";
 import type { SiteItemDetail } from "@aihot/contracts/site";
 import { pageMeta } from "../lib/seo";
-import { exportBundle, importBundle, removeStar, useStarred, type ImportReport } from "../lib/local-state";
+import { exportBundle, importBundle, removeStar, useStarred, type ImportReport, type LocalStarredItem } from "../lib/local-state";
 import { fullDateTime, shortSourceName } from "../lib/format";
 /** Shared caches may keep this page for five minutes. */
 export function headers() {
@@ -32,7 +32,44 @@ function reportText(r: ImportReport, locale: Locale): string {
 
 
 const IMPORT_ERRORS = new Set(["文件过大（上限 2,000,000 字符）", "不是有效的 JSON 文件", "文件格式不对（需要 version: 1）", "浏览器存储已满或不可用，这次没有导入任何内容。"]);
-type BookmarkDisplay = Pick<SiteItemDetail, "title" | "summary" | "source" | "publishedAt">;
+type BookmarkDisplay = Pick<SiteItemDetail, "title" | "summary" | "source" | "publishedAt" | "textLocale">;
+
+/** 收藏快照和实时译文分开显示，旧快照没有语言记录时明确告知读者。 */
+export function StarredCard({ saved, display, status }: { saved: LocalStarredItem; display?: BookmarkDisplay; status?: string }) {
+  const t = useT();
+  const locale = useLocale();
+  const unavailable = status === "unavailable";
+  const current = unavailable ? undefined : display;
+  const title = current?.title ?? saved.title;
+  const summary = current ? current.summary : saved.summary;
+  const publishedAt = current ? current.publishedAt : saved.publishedAt;
+  const textLocale = current ? current.textLocale : saved.textLocale;
+  const textLang = textLocale ? HTML_LANG[textLocale] : undefined;
+  const awaitingTranslation = !!current && !!textLocale && textLocale !== locale;
+  const snapshotNote = !current ? textLocale
+    ? t("正在显示收藏时保存的{language}内容。", { language: t({ zh: "中文", en: "英文", ru: "俄文" }[textLocale] as "中文" | "英文" | "俄文") })
+    : t("正在显示收藏时保存的内容，未记录当时的语言。") : null;
+  return (
+    <li className={`relative border-b border-line-soft py-4 lg:card lg:px-[18px] lg:py-[15px] ${unavailable ? "opacity-70" : "lg:card-hover"}`}>
+      <div className="flex items-center gap-2 text-[12.5px] text-ink-4">
+        <span className="min-w-0 truncate text-ink-3">{shortSourceName(current?.source.name ?? saved.sourceName)}</span>
+        {publishedAt && <span className="num shrink-0">· {fullDateTime(publishedAt, locale)}</span>}
+        <span className="ms-auto hidden shrink-0 sm:inline">{t("收藏于 {time}", { time: fullDateTime(saved.savedAt, locale) })}</span>
+        <button type="button" aria-label={t("取消收藏")} title={t("取消收藏")} onClick={() => removeStar(saved.id)} className="relative z-10 -my-1 ms-auto grid size-7 shrink-0 place-items-center rounded-full text-ink-4 transition-colors hover:bg-bg-sunk hover:text-ink sm:ms-0">
+          <IconClose size={14} />
+        </button>
+      </div>
+      <h2 lang={textLang} className="mt-1.5 text-[16px] font-[650] leading-[1.55] text-ink">
+        {unavailable ? title : <Link to={`/items/${saved.id}`} className="transition-colors after:absolute after:inset-0 after:content-[''] hover:text-accent">{title}</Link>}
+      </h2>
+      {summary && <p lang={textLang} className="mt-1.5 line-clamp-2 text-[14px] leading-[1.75] text-ink-3">{summary}</p>}
+      {awaitingTranslation && <p className="mt-1.5 text-[11.5px] text-ink-4" title={t("当前语言的标题和摘要正在等待翻译。")}>{t("等待翻译")}</p>}
+      {snapshotNote && <p className="mt-1.5 text-[11.5px] text-ink-4">{snapshotNote}</p>}
+      {unavailable && <p className="mt-2 text-[12.5px] text-hot">{t("这条内容已不再公开，收藏会保留直到你手动移除。")}</p>}
+      {status === "summary-only" && <p className="mt-2 text-[12.5px] text-amber-ink">{t("应来源方要求，这条内容现在只提供摘要。")}</p>}
+    </li>
+  );
+}
 
 export default function StarredPage() {
   const t = useT();
@@ -72,7 +109,7 @@ export default function StarredPage() {
           if (!response.ok) continue;
           const item = await response.json() as SiteItemDetail;
           if (controller.signal.aborted) return;
-          setLocalized((current) => current.locale === locale ? { locale, items: { ...current.items, [id]: { title: item.title, summary: item.summary, source: item.source, publishedAt: item.publishedAt } } } : current);
+          setLocalized((current) => current.locale === locale ? { locale, items: { ...current.items, [id]: { title: item.title, summary: item.summary, source: item.source, publishedAt: item.publishedAt, textLocale: item.textLocale } } } : current);
         } catch {
           // 不公开或暂不可用的内容继续显示读者保存的快照。
         }
@@ -147,35 +184,7 @@ export default function StarredPage() {
             const status = availability[s.id];
             const unavailable = status === "unavailable";
             const display = !unavailable && localized.locale === locale ? localized.items[s.id] : undefined;
-            const title = display?.title ?? s.title;
-            const summary = display ? display.summary : s.summary;
-            const publishedAt = display?.publishedAt ?? s.publishedAt;
-            return (
-              <li key={s.id} className={`relative border-b border-line-soft py-4 lg:card lg:px-[18px] lg:py-[15px] ${unavailable ? "opacity-70" : "lg:card-hover"}`}>
-                <div className="flex items-center gap-2 text-[12.5px] text-ink-4">
-                  <span className="min-w-0 truncate text-ink-3">{shortSourceName(display?.source.name ?? s.sourceName)}</span>
-                  {publishedAt && <span className="num shrink-0">· {fullDateTime(publishedAt, locale)}</span>}
-                  <span className="ms-auto hidden shrink-0 sm:inline">
-                    {t("收藏于 {time}", { time: fullDateTime(s.savedAt, locale) })}
-                  </span>
-                  <button type="button" aria-label={t("取消收藏")} title={t("取消收藏")} onClick={() => removeStar(s.id)} className="relative z-10 -my-1 ms-auto grid size-7 shrink-0 place-items-center rounded-full text-ink-4 transition-colors hover:bg-bg-sunk hover:text-ink sm:ms-0">
-                    <IconClose size={14} />
-                  </button>
-                </div>
-                <h2 className="mt-1.5 text-[16px] font-[650] leading-[1.55] text-ink">
-                  {unavailable ? (
-                    title
-                  ) : (
-                    <Link to={`/items/${s.id}`} className="transition-colors after:absolute after:inset-0 after:content-[''] hover:text-accent">
-                      {title}
-                    </Link>
-                  )}
-                </h2>
-                {summary && <p className="mt-1.5 line-clamp-2 text-[14px] leading-[1.75] text-ink-3">{summary}</p>}
-                {unavailable && <p className="mt-2 text-[12.5px] text-hot">{t("这条内容已不再公开，收藏会保留直到你手动移除。")}</p>}
-                {status === "summary-only" && <p className="mt-2 text-[12.5px] text-amber-ink">{t("应来源方要求，这条内容现在只提供摘要。")}</p>}
-              </li>
-            );
+            return <StarredCard key={s.id} saved={s} display={display} status={status} />;
           })}
         </ul>
       )}

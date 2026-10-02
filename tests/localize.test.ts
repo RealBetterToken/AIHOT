@@ -12,9 +12,10 @@ const source = `localize-${T}`;
 let partial = false;
 const provider = await stub((_hit, req) => {
   const { items } = JSON.parse(JSON.parse(req.body).messages[1].content);
-  return { choices: [{ message: { content: JSON.stringify({ items: [null, { id: 123 }, ...items.map((r: { id: string }) => ({ id: r.id,
-    ru: partial ? { title: "", summary: "" } : { title: "Русский", summary: `Перевод ${T}`, reason: "" },
-    en: { title: "English", summary: `translated-${T}`, reason: "" },
+  return { choices: [{ message: { content: JSON.stringify({ items: [null, { id: 123 }, ...items.map((r: { id: string; summary: string | null }) => ({ id: r.id,
+    zh: { title: "中文原始标题", summary: r.summary === null ? null : "中文摘要", reason: "" },
+    ru: partial ? { title: "", summary: "" } : { title: "Русский", summary: r.summary === null ? null : `Перевод ${T}`, reason: "Причина" },
+    en: { title: "English", summary: r.summary === null ? null : `translated-${T}`, reason: "Reason" },
   }))] }) } }], usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 } };
 });
 
@@ -52,7 +53,7 @@ test("两篇卡片批量保存四行；搜索刷新、再次发布和中文修�
   assert.equal((await localizeArticles([changed!], 'ru'))[0]!.title, changed!.title);
   partial = true;
   assert.equal((await localizePending({ limit: 1 })).stored, 1);
-  assert.equal((await localizeArticles([changed!], 'ru'))[0]!.title, 'English');
+  assert.equal((await localizeArticles([changed!], 'ru'))[0]!.title, changed!.title);
   partial = false;
   assert.equal((await localizePending({ limit: 1 })).stored, 2);
   assert.equal((await localizeArticles([changed!], 'ru'))[0]!.title, 'Русский');
@@ -64,7 +65,7 @@ test("定向重新本地化只处理指定文章，不处理其他待翻译卡�
   const ids: string[] = [];
   for (let i = 0; i < 2; i++) {
     const { articleId } = await upsertMaterial({ sourceId: source, url: `https://example.com/${T}/target-${i}`,
-      title: `定向标题${i}`, language: 'zh', bodyText: '正文', bodyStatus: 'ok', via: 'fetch', discoveredAt: new Date(Date.now() + 7200000) });
+      title: `定向标题${i}`, language: 'zh', bodyText: '正文', bodyStatus: 'ok', via: 'fetch', discoveredAt: new Date(Date.now() - 30 * 86400000) });
     await sql`INSERT INTO analyses (article_id,input_revision,origin,relevance,title_zh,summary_zh,score,selected)
       VALUES (${articleId},1,'rule','pass',${`定向标题${i}`},'定向摘要',90,true)`;
     await publishArticle(articleId);
@@ -74,4 +75,30 @@ test("定向重新本地化只处理指定文章，不处理其他待翻译卡�
   assert.equal(result.stored, 2);
   assert.equal((await sql`SELECT 1 FROM localizations WHERE ref_id = ${ids[0]!}`).length, 2);
   assert.equal((await sql`SELECT 1 FROM localizations WHERE ref_id = ${ids[1]!}`).length, 0);
+});
+
+test("尚无摘要的历史英文公开文章补齐中文和俄文标题，不制造摘要",async()=>{
+  const {articleId}=await upsertMaterial({sourceId:source,url:`https://example.com/${T}/title-only`,title:'An English Original Article',language:'en',bodyText:'Original body.',bodyStatus:'ok',via:'fetch',discoveredAt:new Date('2020-01-01')});
+  await publishArticle(articleId);
+  assert.equal((await localizePending({articleIds:[articleId]})).stored,2);
+  const [row]=await sql<{id:string;title:string;summary:string|null;reason:string|null}[]>`SELECT article_id AS id,title,summary,reason FROM publications WHERE article_id=${articleId}`;
+  assert.equal((await localizeArticles([row!],'zh'))[0]!.title,'中文原始标题');
+  assert.equal((await localizeArticles([row!],'ru'))[0]!.title,'Русский');
+  assert.equal((await localizeArticles([row!],'en'))[0]!.title,'An English Original Article');
+  assert.equal((await localizeArticles([row!],'zh'))[0]!.summary,null);
+});
+
+test("卡片记录文风版本，源文字未变也能升级旧译文",async()=>{
+  const {articleId}=await upsertMaterial({sourceId:source,url:`https://example.com/${T}/style-cache`,title:'文风版本',language:'zh',bodyText:'正文',bodyStatus:'ok',via:'fetch'});
+  await sql`INSERT INTO analyses(article_id,input_revision,origin,relevance,title_zh,summary_zh,score,selected)
+    VALUES(${articleId},1,'rule','pass','文风标题','文风摘要',90,true)`;
+  await publishArticle(articleId);
+  assert.equal((await localizePending({articleIds:[articleId]})).stored,2);
+  const [saved]=await sql`SELECT to_jsonb(l)->>'quality_version' AS version FROM localizations l WHERE kind='article' AND ref_id=${articleId} AND locale='ru'`;
+  assert.ok(saved.version?.length,'卡片缓存必须记录文风与术语版本');
+  await sql`UPDATE localizations SET quality_version='old-style' WHERE kind='article' AND ref_id=${articleId}`;
+  assert.equal((await localizePending({articleIds:[articleId]})).stored,2);
+  const [current]=await sql`SELECT quality_version FROM localizations WHERE kind='article' AND ref_id=${articleId} AND locale='ru'`;
+  assert.equal(current.quality_version,saved.version);
+  assert.equal((await localizePending({articleIds:[articleId]})).stored,0);
 });

@@ -7,7 +7,8 @@ import { MediaThumbs, SourceLine, StarButton } from "./parts";
 import { GroupDevelopments, GroupSources, LatestDevelopment } from "./ReadingGroup";
 import { QuotedLine } from "../item/QuotedPost";
 import { useT, useLocale } from "../../i18n/index";
-import { categoryLabel } from "@aihot/industry/taxonomy";
+import { HTML_LANG } from "../../i18n/locale";
+import { categoryLabel, tagLabel } from "@aihot/industry/taxonomy";
 import { memo } from "react";
 import type { GroupInfo, FeedItemSummary, TimelineFilters } from "@aihot/contracts/site";
 // One report in a feed. Desktop (≥ 961px): a white card beside the time rail. Mobile: a compact row
@@ -31,6 +32,8 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
   const showSources = !!group && (group.additionalSourceCount > 0 || (group.developmentCount <= 1 && group.reportCount > 1));
   const showDevelopments = !!group?.story && group.developmentCount > 1;
   const tags = showTags ? item.tags.slice(0, 3) : [];
+  const textLang = item.textLocale ? HTML_LANG[item.textLocale] : undefined;
+  const awaitingTranslation = !!item.textLocale && item.textLocale !== locale;
 
   return (
     <article className="relative min-w-0 lg:card lg:card-hover lg:px-[18px] lg:pb-[14px] lg:pt-[15px]" data-item-id={item.id}>
@@ -55,21 +58,23 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
       </header>
 
       {isX ? (
-        <p className={`mt-2 whitespace-pre-line text-[15px] leading-[1.75] line-clamp-5 lg:line-clamp-4 ${read ? "text-ink-4" : "text-ink"}`}>
+        <p lang={textLang} className={`mt-2 whitespace-pre-line text-[15px] leading-[1.75] line-clamp-5 lg:line-clamp-4 ${read ? "text-ink-4" : "text-ink"}`}>
           <IntentLink to={`/items/${item.id}`} onClick={open} className="after:absolute after:inset-0 after:content-['']">
             {item.summary ?? item.title}
           </IntentLink>
         </p>
       ) : (
         <>
-          <h3 className={`mt-2 line-clamp-2 text-[17px] font-bold leading-[1.55] lg:line-clamp-none lg:font-[650] ${read ? "text-ink-4" : "text-ink"}`}>
+          <h3 lang={textLang} className={`mt-2 line-clamp-2 text-[17px] font-bold leading-[1.55] lg:line-clamp-none lg:font-[650] ${read ? "text-ink-4" : "text-ink"}`}>
             <IntentLink to={`/items/${item.id}`} onClick={open} className="after:absolute after:inset-0 after:content-['']">
               {item.title}
             </IntentLink>
           </h3>
-          {item.summary && <p className="mt-1.5 line-clamp-2 text-[14.5px] leading-[1.75] text-ink-3 lg:mt-2 lg:line-clamp-3 lg:text-[15px]">{item.summary}</p>}
+          {item.summary && <p lang={textLang} className="mt-1.5 line-clamp-2 text-[14.5px] leading-[1.75] text-ink-3 lg:mt-2 lg:line-clamp-3 lg:text-[15px]">{item.summary}</p>}
         </>
       )}
+
+      {awaitingTranslation && <p className="mt-1.5 text-[11.5px] text-ink-4" title={t("当前语言的标题和摘要正在等待翻译。")}>{t("等待翻译")}</p>}
 
       {isX && item.x!.media.length > 0 && <MediaThumbs media={item.x!.media} className="mt-2.5" />}
       {isX && item.x!.quoted?.text && <QuotedLine quoted={item.x!.quoted} />}
@@ -81,9 +86,9 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
               {categoryLabel(item.category, locale)}
             </Link>
           )}
-          {tags.map((t) => (
-            <Link key={t} to={`/all?tag=${encodeURIComponent(t)}`} className="hover:text-accent">
-              #{t}
+          {tags.map((tag) => (
+            <Link key={tag} to={`/all?tag=${encodeURIComponent(tag)}`} className="hover:text-accent">
+              #{tagLabel(tag, locale)}
             </Link>
           ))}
         </div>
@@ -99,7 +104,7 @@ export const FeedItem = memo(function FeedItem({ item, group, filters, read = fa
 
       {item.reason && (
         <div className="mt-2.5 rounded-control bg-bg-sunk px-3 py-2 dark:bg-bg-muted/60 lg:mt-3 lg:rounded-none lg:border-t lg:border-line-soft lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-3 lg:dark:bg-transparent">
-          <p className="line-clamp-2 text-[13px] leading-[1.65] text-ink-3 lg:line-clamp-none lg:leading-[1.75] lg:text-note">{t("推荐理由：")}{item.reason}</p>
+          <p className="line-clamp-2 text-[13px] leading-[1.65] text-ink-3 lg:line-clamp-none lg:leading-[1.75] lg:text-note">{t("推荐理由：")}<span lang={textLang}>{item.reason}</span></p>
         </div>
       )}
     </article>

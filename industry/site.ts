@@ -9,13 +9,13 @@ export const SITE = {
    * 行业词：拼进默认说法里，比如“AI 日报”“AI 动态”。
    * 改成“法律”“HR”“黄金”之类，页面上就会变成“法律日报”“法律动态”。
    */
-  subject: "AI",
+  subject: "Vibe Coding",
   /** 首页的完整标题（浏览器标签、搜索结果）。 */
-  homeTitle: "VibeHot — AI 行业动态 · 每日精选与日报",
+  homeTitle: "VibeHot — Vibe Coding 与 AI 编程 · 每日精选与日报",
   /** 一句话介绍：搜索引擎、分享卡片、RSS、llms.txt 会用。 */
-  description: "自动盯住上百个信源，用模型摘要、打分、精选，把同一件事的多篇报道归到一起，每天早上出一份日报。",
+  description: "聚合程序员社区与官方信源的 Vibe Coding 和 AI 编程实践，精选教程、工作流、踩坑、工具与观点，每天早上出一份日报，支持中文、俄文与英文阅读。",
   /** 首页左上角和侧边栏下面的一行小字。 */
-  tagline: "值得关注的 AI 动态",
+  tagline: "值得关注的 AI 编程实践",
   /** 界面语言（HTML lang、og:locale）。 */
   locale: "zh-CN",
   /** 默认域名，只在没设置 SITE_URL 时使用。 */
@@ -45,14 +45,14 @@ export const SITE = {
 export const ABOUT = {
   kicker: `关于 ${SITE.name}`,
   /** 大标题：第一行正常颜色，第二行强调色。 */
-  headline: ["AI 圈每天都有新动静，", "值得看的，只有几条。"] as [string, string],
+  headline: ["Vibe Coding 每天都有新实践，", "值得看的，只有几条。"] as [string, string],
   /** 标题下面的一段话。{sources} 会换成实时的信源数。 */
   lead: `${SITE.name} 替你盯着 {sources} 个信源：抓取、归并、打分、精选，每天早上 8 点出一份日报。免费，不用注册。`,
   /** 信源河动画下面的四个环节。 */
   steps: {
-    collect: "官方博客、媒体、X 账号、公众号和各类订阅源都在看；活跃的源 15 分钟就看一次。",
+    collect: "持续关注程序员社区、官方更新与开发者博客，也收录 X 账号、公众号和各类订阅源；活跃的源 15 分钟就看一次。",
     store: "抓到的都存下来，同一件事的报道归到一起；只计入热度的账号也算在内，热点榜就是从这里算出来的。",
-    select: "模型先看是不是这个行业的事、有没有实际信息，再写中文标题、摘要和推荐理由；营销稿和重复转发进不来。",
+    select: "模型先看是不是 Vibe Coding 和 AI 编程相关的事、有没有实际信息，再写标题、摘要和推荐理由，提供中文、俄文与英文阅读；营销稿和重复转发进不来。",
     publish: "每天 08:00 出日报，周一出周报，每月 1 日出月报；最精选的几条可以推到飞书群。",
   },
   /**
@@ -79,8 +79,8 @@ export function withSubject(noun: string): string {
 /** 本地化只影响读者文案；站名、联系资料与机器接口身份保持现有配置。 */
 export type SiteLocale = "zh" | "ru" | "en";
 const SITE_COPY = {
-  ru: { homeTitle: `${SITE.name} — Новости ИИ · Избранное и ежедневный обзор`, description: "Автоматически следим за сотнями источников, с помощью моделей составляем краткие изложения, оцениваем и отбираем материалы, объединяем публикации об одном событии и каждое утро выпускаем обзор.", tagline: "Новости ИИ, заслуживающие внимания", locale: "ru-RU", footerNote: "Создано на основе открытой платформы" },
-  en: { homeTitle: `${SITE.name} — AI news · Daily picks and briefings`, description: "Automatically follows hundreds of sources, uses models to summarize, score and select stories, groups coverage of the same event, and publishes a briefing every morning.", tagline: "AI news worth following", locale: "en-US", footerNote: "Built on an open-source framework" },
+  ru: { homeTitle: `${SITE.name} — Vibe Coding и программирование с ИИ · Избранное и обзоры`, description: "Практика Vibe Coding и программирования с ИИ из сообществ разработчиков и официальных источников: руководства, рабочие процессы, ошибки, инструменты и мнения. Ежедневные обзоры и чтение на китайском, русском и английском.", tagline: "Практика программирования с ИИ, заслуживающая внимания", locale: "ru-RU", footerNote: "Создано на основе открытой платформы" },
+  en: { homeTitle: `${SITE.name} — Vibe Coding and AI programming · Daily picks and briefings`, description: "Vibe Coding and AI programming practice from developer communities and official sources: selected tutorials, workflows, pitfalls, tools and opinions, with daily briefings and reading in Chinese, Russian and English.", tagline: "AI programming practice worth following", locale: "en-US", footerNote: "Built on an open-source framework" },
 } as const;
 
 export function getSite(locale: SiteLocale = "zh") {
@@ -90,16 +90,16 @@ export function getSite(locale: SiteLocale = "zh") {
 const ABOUT_COPY = {
   ru: {
     kicker: `О ${SITE.name}`,
-    headline: ["В мире ИИ каждый день что-то новое,", "но внимания заслуживают лишь немногие новости."] as [string, string],
+    headline: ["Новые практики Vibe Coding каждый день,", "но внимания заслуживают лишь немногие материалы."] as [string, string],
     lead: `${SITE.name} следит за {sources} источниками: собирает, объединяет, оценивает и отбирает материалы, выпуская обзор каждый день в 08:00 по пекинскому времени. Бесплатно, без регистрации.`,
-    steps: { collect: "Следим за официальными блогами, СМИ, аккаунтами X, публичными аккаунтами WeChat и лентами подписок; активные источники проверяем каждые 15 минут.", store: "Сохраняем всё собранное и объединяем публикации об одном событии; учитываем и аккаунты, используемые только для оценки интереса. На этих данных строится рейтинг событий.", select: "Модель сначала проверяет связь с отраслью и наличие полезной информации, затем пишет китайский заголовок, краткое изложение и обоснование выбора; реклама и повторные репосты не проходят.", publish: "Ежедневный обзор выходит в 08:00, недельный — по понедельникам, месячный — первого числа; лучшие материалы можно отправлять в группу Feishu." },
+    steps: { collect: "Следим за сообществами разработчиков, официальными обновлениями и блогами разработчиков, а также аккаунтами X, публичными аккаунтами WeChat и лентами подписок; активные источники проверяем каждые 15 минут.", store: "Сохраняем всё собранное и объединяем публикации об одном событии; учитываем и аккаунты, используемые только для оценки интереса. На этих данных строится рейтинг событий.", select: "Модель проверяет связь с Vibe Coding и программированием с ИИ и наличие полезной информации, затем пишет заголовок, краткое изложение и обоснование выбора для чтения на китайском, русском и английском; реклама и повторные репосты не проходят.", publish: "Ежедневный обзор выходит в 08:00, недельный — по понедельникам, месячный — первого числа; лучшие материалы можно отправлять в группу Feishu." },
     copyright: `${SITE.name} — агрегатор кратких изложений и указатель для чтения; права на оригиналы принадлежат их источникам. Если вы представляете источник и хотите исправить, удалить или изменить показ материала, свяжитесь с нами через`,
   },
   en: {
     kicker: `About ${SITE.name}`,
-    headline: ["AI news arrives every day,", "only a few stories deserve your attention."] as [string, string],
+    headline: ["New Vibe Coding practices every day,", "only a few stories deserve your attention."] as [string, string],
     lead: `${SITE.name} follows {sources} sources for you: collecting, grouping, scoring and selecting stories, with a daily briefing at 08:00 Beijing time. Free, no registration required.`,
-    steps: { collect: "We follow official blogs, media, X accounts, WeChat public accounts and subscription feeds; active sources are checked every 15 minutes.", store: "Everything collected is saved and coverage of the same event is grouped together; accounts used only to measure interest are included too. These records power the trending chart.", select: "A model checks whether a story belongs to the industry and contains useful information, then writes a Chinese headline, summary and recommendation; marketing copy and duplicate reposts are excluded.", publish: "Daily briefings appear at 08:00, weekly reviews on Mondays and monthly reviews on the first day of the month; the best picks can also be sent to a Feishu group." },
+    steps: { collect: "We follow developer communities, official updates and developer blogs, as well as X accounts, WeChat public accounts and subscription feeds; active sources are checked every 15 minutes.", store: "Everything collected is saved and coverage of the same event is grouped together; accounts used only to measure interest are included too. These records power the trending chart.", select: "A model checks whether a story relates to Vibe Coding and AI programming and contains useful information, then writes a headline, summary and recommendation for reading in Chinese, Russian and English; marketing copy and duplicate reposts are excluded.", publish: "Daily briefings appear at 08:00, weekly reviews on Mondays and monthly reviews on the first day of the month; the best picks can also be sent to a Feishu group." },
     copyright: `${SITE.name} aggregates summaries and provides a reading index; copyright in original articles belongs to their sources. If you represent a source and would like a correction, removal or display change, contact us through the`,
   },
 } as const;

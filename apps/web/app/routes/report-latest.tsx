@@ -23,7 +23,7 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
   const t = createT(locale);
   const kind = loaderData?.kind ?? "daily";
   return pageMeta({ locale,
-    title: `AI ${translateKnown(locale, KIND_LABEL[kind])}`,
+    title: withSubject(translateKnown(locale, KIND_LABEL[kind])),
     description: kind === "daily" ? t("{arg0} 每天 08:00（北京时间）发布的{arg1}。", { arg0: SITE.name, arg1: withSubject(t("日报")) }) : kind === "weekly" ? t("每周综合回顾。") : t("每月盘点。"),
     path: location.pathname,
     image: `/og/pages/${kind}.png`,
@@ -40,7 +40,7 @@ export default function ReportLatestPage() {
   const { kind, report, index, today } = useLoaderData<typeof loader>();
   return (
     <ReportLayout kind={kind} index={index} current={report?.key ?? null} today={today}>
-      {report ? <ReportPaper report={report} index={index} /> : <EmptyState title={t("还没有发布 AI {arg0}", { arg0: translateKnown(locale, KIND_LABEL[kind]) })}>{t("第一期发布后会出现在这里。")}</EmptyState>}
+      {report ? <ReportPaper report={report} index={index} /> : <EmptyState title={t("还没有发布{report}", { report: withSubject(translateKnown(locale, KIND_LABEL[kind])) })}>{t("第一期发布后会出现在这里。")}</EmptyState>}
     </ReportLayout>
   );
 }

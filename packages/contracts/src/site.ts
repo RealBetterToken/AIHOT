@@ -33,7 +33,7 @@ export interface XPostView {
   avatarSrcSet?: string;
   text: string;
   translation: string | null;
-  /** 按请求语言及英文回退选择的引用帖译文。 */
+  /** 请求语言的引用帖译文；缺失时为 null。 */
   quoted: { authorName: string; handle: string; text: string; url: string; translation: string | null } | null;
   media: MediaView[];
 }
@@ -47,6 +47,8 @@ export interface ItemSummary {
   id: string;
   revision: number;
   title: string;
+  /** 标题、摘要和理由实际使用的语言，旧缓存可缺省为中文。 */
+  textLocale?: Locale;
   originalTitle: string | null;
   summary: string | null;
   reason: string | null;
@@ -65,7 +67,7 @@ export interface ItemSummary {
 }
 
 /** The fields rendered by a site feed card; full original text lives in the item detail. */
-export interface FeedItemSummary extends Pick<ItemSummary, "id" | "title" | "summary" | "reason" | "publishedAt" | "timelineAt" | "category" | "tags" | "score" | "selected" | "channel"> {
+export interface FeedItemSummary extends Pick<ItemSummary, "id" | "title" | "textLocale" | "summary" | "reason" | "publishedAt" | "timelineAt" | "category" | "tags" | "score" | "selected" | "channel"> {
   source: Pick<SourceRef, "name">;
   x: (Pick<XPostView, "authorName" | "handle" | "avatarUrl" | "avatarSrcSet" | "media"> & {
     quoted: Omit<NonNullable<XPostView["quoted"]>, "url"> | null;
@@ -142,6 +144,8 @@ export interface ItemDetail extends ItemSummary {
   readingMode: "full" | "summary-only";
   author: string | null;
   language: string | null;
+  /** 每种阅读语言的当前版本状态，不在读者请求中触发翻译。 */
+  readingLanguages: Array<{ locale: Locale; status: "original" | "translated" | "partial" | "pending" | "unavailable" }>;
   /** 请求语言的正文译文与原文，均为已清理的 HTML。 */
   body: { localized: string | null; original: string | null; localizedLanguage: Locale | null; complete: boolean } | null;
   outline: OutlineEntry[];
@@ -370,7 +374,7 @@ export interface SiteStats {
   /** Enabled sources in a daily shuffle, for the about page's river: one line per source. */
   sampleSources: Array<{ name: string; kind: string; heatOnly: boolean }>;
   /** The latest 精选, newest first. */
-  latest: Array<{ id: string; title: string; source: string }>;
+  latest: Array<{ id: string; title: string; source: string; textLocale?: Locale }>;
 }
 
 /** A reading page transfers one language; the canonical item retains both for exports. */

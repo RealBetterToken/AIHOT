@@ -20,12 +20,14 @@ let hold: ReturnType<typeof gate<void>> | null = null;
 const asked = gate();
 const asks = new Map<string, number>();
 const provider = await stub(async (_hit, req) => {
-  const { segments } = JSON.parse(JSON.parse(req.body).messages[1].content) as { segments: string[] };
+  const { segments, targetLanguage } = JSON.parse(JSON.parse(req.body).messages[1].content) as { segments: string[]; targetLanguage: string };
   if (hold) {
     asked.open();
     await hold.promise;
   }
   const t = segments.map((s) => {
+    if (targetLanguage === "俄语") return "Переведённый текст.";
+    if (targetLanguage === "英语") return "Translated text.";
     // A block with a link and an image: the first answer drops the link, the second keeps everything.
     if (s.includes("Neuroglancer")) {
       const n = (asks.get(s) ?? 0) + 1;
@@ -53,7 +55,7 @@ const material = (price: string) =>
 async function detail(id: string) {
   const res = await app.inject({ method: "GET", url: `/api/site/items/${id}` });
   assert.equal(res.statusCode, 200);
-  return JSON.parse(res.body) as { body: { localized: string | null; original: string | null; complete: boolean } };
+  return JSON.parse(res.body) as { body: { localized: string | null; original: string | null; complete: boolean }; readingLanguages: Array<{locale:string;status:string}> };
 }
 
 before(async () => {
@@ -76,7 +78,7 @@ test("a text corrected while its translation was running is translated again, an
 
   // The model is asked about revision 1; the source corrects the price before it answers.
   hold = gate();
-  const running = translatePending({ limit: 1 });
+  const running = translatePending({ limit: 1, articleIds: [id] });
   await Promise.race([asked.promise, running.then(() => assert.fail("the run ended without asking the model"))]);
   const revised = await material("twenty");
   assert.equal(revised.revised, true);
@@ -89,8 +91,9 @@ test("a text corrected while its translation was running is translated again, an
   const stale = await detail(id);
   assert.equal(stale.body.localized, null, "a translation of the old wording is not shown");
   assert.ok(stale.body.original?.includes("twenty"));
+  assert.equal(stale.readingLanguages.find(language=>language.locale==='zh')?.status,'pending','语言状态也必须忽略过期正文');
 
-  await translatePending({ limit: 1 });
+  await translatePending({ limit: 1, articleIds: [id] });
   const [tr] = await sql<{ revision: number }[]>`SELECT revision FROM translations WHERE article_id = ${id}`;
   assert.equal(tr?.revision, 2, "the corrected text is translated on the next run");
   const current = await detail(id);
@@ -109,7 +112,7 @@ test("links and images inside a paragraph survive the translation, or the paragr
             VALUES (${id}, 1, 'rule', 'pass', 'release', ${`链接-${T}`}, '摘要', '理由', 90, true)`;
   await publishArticle(id, { releasedAt: new Date(Date.now() - 60_000) });
   await sql`UPDATE publications SET selected_ready_at = discovered_at WHERE article_id=${id}`;
-  await translatePending({ limit: 1 });
+  await translatePending({ limit: 1, articleIds: [id] });
   const [tr] = await sql<{ body_html: string; complete: boolean }[]>`SELECT body_html, complete FROM translations WHERE article_id = ${id}`;
   assert.ok(tr!.body_html.includes('<a href="https://neuroglancer.dev/docs">Neuroglancer</a>'), tr!.body_html);
   assert.ok(tr!.body_html.includes(`chart-${T}.png`), "the chart stays");
@@ -128,14 +131,14 @@ test("the post a selected X post quotes is translated once and shown with the it
             VALUES (${id}, 1, 'rule', 'pass', 'release', ${`引用-${T}`}, '摘要', '理由', 90, true)`;
   await publishArticle(id, { releasedAt: new Date(Date.now() - 60_000) });
   await sql`UPDATE publications SET selected_ready_at = discovered_at WHERE article_id=${id}`;
-  const run = await translatePending({ limit: 1 });
+  const run = await translatePending({ limit: 1, articleIds: [id] });
   assert.ok(run.quotes >= 1);
   const [q] = await sql<{ text_zh: string; origin: string }[]>`SELECT text AS text_zh, origin FROM quote_translations_lang WHERE lang = 'zh' AND tweet_id = ${tweetId}`;
   assert.deepEqual({ ...q }, { text_zh: "隆重推出 Sonnet 5.5。", origin: "model" });
   const res = await app.inject({ method: "GET", url: `/api/site/items/${id}` });
   const item = JSON.parse(res.body) as { x: { quoted: { text: string; translation: string | null } } };
   assert.deepEqual([item.x.quoted.text, item.x.quoted.translation], [`Introducing Claude Sonnet 5.5 ${T}`, "隆重推出 Sonnet 5.5。"]);
-  await translatePending({ limit: 1 });
+  await translatePending({ limit: 1, articleIds: [id] });
   const receipts = await sql`SELECT 1 FROM receipts WHERE purpose = 'translate_quoted' AND subject = ${`quote:${tweetId}:zh`}`;
   assert.equal(receipts.length, 1, "translated once");
 });

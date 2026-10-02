@@ -1,6 +1,7 @@
 import { Link } from "../lib/locale-links";
 import { useT, useLocale, createT, translateKnown } from "../i18n/index.ts";
 import { localeFromPath, localePath, apiPath } from "../i18n/locale.ts";
+import { HTML_LANG } from "../i18n/locale.ts";
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLoaderData } from "react-router";
 import type { SiteStats } from "@aihot/contracts/site";
@@ -192,7 +193,8 @@ function Latest({ item, className = "" }: { item: SiteStats["latest"][number] | 
     <Link to={`/items/${item.id}`} prefetch="intent" className={`group block ${className}`}>
       <span className="text-[11px] font-semibold tracking-[0.2em] text-accent">{t("最近精选")}</span>
       <span key={item.id} className="animate-fade-up mt-1.5 block">
-        <span className="line-clamp-2 text-[13.5px] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span>
+        <span lang={HTML_LANG[item.textLocale ?? "zh"]} className="line-clamp-2 text-[13.5px] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span>
+        {(item.textLocale ?? "zh") !== locale && <span className="mt-1 block text-[11px] text-ink-4">{t("等待翻译")}</span>}
         <span className="mt-1 block truncate text-[12px] text-ink-4">{shortSourceName(item.source)}</span>
       </span>
     </Link>

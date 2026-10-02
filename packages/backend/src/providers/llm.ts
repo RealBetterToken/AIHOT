@@ -1,7 +1,7 @@
 // OpenAI-compatible chat calls, always through receipts. One model is enough: `default` is whatever the
 // deployment names in LLM_BASE_URL / LLM_API_KEY / LLM_MODEL, and every capability uses it unless an
 // environment variable or the admin's model page picks one of the named presets below.
-import type { z } from "zod";
+import { z } from "zod";
 import { config, credential } from "../config.ts";
 import { sha256 } from "../lib/ids.ts";
 import { completeReceipt, paidRequest, ProviderRejectedError, rejectReceivedResponse } from "./receipts.ts";
@@ -17,6 +17,7 @@ export interface ModelSpec {
   extra?: Record<string, unknown>;
   jsonMode: boolean;
   vision?: boolean;
+  translationOnly?: boolean;
 }
 
 function extraFromEnv(value: string | undefined): Record<string, unknown> | undefined {
@@ -70,6 +71,11 @@ export const MODELS: Record<string, ModelSpec> = {
     baseUrlEnv: "DASHSCOPE_BASE_URL", apiKeyEnv: "DASHSCOPE_API_KEY",
     extra: { enable_thinking: false }, jsonMode: true,
   },
+  "qwen-mt-flash": {
+    key: "qwen-mt-flash", service: "dashscope", model: "qwen-mt-flash",
+    baseUrlEnv: "DASHSCOPE_BASE_URL", apiKeyEnv: "DASHSCOPE_API_KEY",
+    jsonMode: false, translationOnly: true,
+  },
   "mimo-v2.6-flash": {
     key: "mimo-v2.6-flash", service: "mimo", model: "mimo-v2.6-flash",
     baseUrlEnv: "XIAOMI_MIMO_BASE_URL", apiKeyEnv: "XIAOMI_MIMO_API_KEY",
@@ -99,6 +105,12 @@ export interface ChatJsonOptions<S extends z.ZodType> {
   /** false: the model answers in its own text format (no JSON mode); `parse` turns it into the schema's input. */
   json?: boolean;
   parse?: (content: string) => unknown;
+  translation?: {
+    sourceLanguage?: string;
+    targetLanguage: string;
+    domains?: string;
+    terms?: Array<{ source: string; target: string }>;
+  };
 }
 
 export interface ChatJsonResult<T> {
@@ -154,6 +166,8 @@ function isConnectFailure(error: unknown): boolean {
 export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): Promise<ChatJsonResult<z.infer<S>>> {
   const spec = MODELS[opts.model];
   if (!spec) throw new Error(`Unknown model ${opts.model}`);
+  if (spec.translationOnly && !opts.translation) throw new Error(`模型 ${opts.model} 只支持翻译请求，必须提供 translation 参数`);
+  if (opts.translation && (opts.system || typeof opts.user !== "string")) throw new Error("翻译请求只支持一条纯文本用户消息，不能包含系统消息或多模态内容");
   if (!config.modelCallsEnabled) throw new Error("Model calls are disabled (MODEL_CALLS_ENABLED=false)");
   const baseUrl = credential("models", spec.baseUrlEnv);
   const apiKey = credential("models", spec.apiKeyEnv);
@@ -162,7 +176,17 @@ export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): P
   const temperature = opts.temperature ?? 0.2;
   const maxTokens = Math.max(opts.maxTokens ?? 1500, 512) + (spec.key.endsWith("-think") ? 4000 : 0);
   const userText = typeof opts.user === "string" ? opts.user : JSON.stringify(opts.user);
-  const body: Record<string, unknown> = {
+  const translation = opts.translation ? {
+    source_lang: opts.translation.sourceLanguage ?? "auto",
+    target_lang: opts.translation.targetLanguage,
+    ...(opts.translation.domains !== undefined ? { domains: opts.translation.domains } : {}),
+    ...(opts.translation.terms !== undefined ? { terms: opts.translation.terms } : {}),
+  } : null;
+  const body: Record<string, unknown> = translation ? {
+    model: spec.model,
+    messages: [{ role: "user", content: userText }],
+    translation_options: translation,
+  } : {
     model: spec.model,
     messages: [
       // A prompt given as one user message (the title/summary prompts) has no system message.
@@ -182,8 +206,12 @@ export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): P
       model: spec.model,
       purpose: opts.purpose,
       subject: opts.subject,
-      identity: { model: spec.model, promptVersion: opts.promptVersion, system: sha256(opts.system), user: sha256(userText), temperature, maxTokens, extra: spec.extra ?? null },
-      requestSummary: { promptVersion: opts.promptVersion, systemHash: sha256(opts.system), userHash: sha256(userText), userChars: userText.length, temperature, maxTokens },
+      identity: { model: spec.model, promptVersion: opts.promptVersion, system: sha256(opts.system), user: sha256(userText), ...(translation ? { translation } : { temperature, maxTokens, extra: spec.extra ?? null }) },
+      requestSummary: { promptVersion: opts.promptVersion, systemHash: sha256(opts.system), userHash: sha256(userText), userChars: userText.length, ...(translation ? {
+        translation: { source_lang: translation.source_lang, target_lang: translation.target_lang,
+          domainsHash: translation.domains !== undefined ? sha256(translation.domains) : null,
+          termsHash: translation.terms !== undefined ? sha256(JSON.stringify(translation.terms)) : null },
+      } : { temperature, maxTokens }) },
       attemptTag: opts.attemptTag,
     },
     async () => {
@@ -225,6 +253,8 @@ export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): P
   const content = response.choices?.[0]?.message?.content ?? "";
   let parsed: z.infer<S>;
   try {
+    if (translation && response.choices?.[0]?.finish_reason === "length") throw new ModelOutputError("翻译输出被长度限制截断");
+    if (translation && !content.trim()) throw new ModelOutputError("翻译输出为空");
     parsed = opts.schema.parse(opts.parse ? opts.parse(content) : extractJson(content));
   } catch (error) {
     // Unusable output: record it and let a later attempt pay for a fresh answer.
@@ -232,6 +262,27 @@ export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): P
     throw new ModelOutputError(`Model ${opts.model} returned unusable output for ${opts.subject}: ${String(error).slice(0, 300)}`);
   }
   return { data: parsed, receiptId: receipt.receiptId, reused: receipt.reused, model: spec.key, usage: response.usage ?? null };
+}
+
+export async function translateText(opts: {
+  model: string;
+  purpose: string;
+  subject: string;
+  promptVersion: string;
+  text: string;
+  sourceLanguage?: string;
+  targetLanguage: string;
+  domains?: string;
+  terms?: Array<{ source: string; target: string }>;
+  attemptTag?: string;
+  timeoutMs?: number;
+}): Promise<ChatJsonResult<string>> {
+  return chatJson({
+    model: opts.model, purpose: opts.purpose, subject: opts.subject, promptVersion: opts.promptVersion,
+    system: "", user: opts.text, schema: z.string().min(1), json: false, parse: (content) => content.trim(),
+    translation: { sourceLanguage: opts.sourceLanguage, targetLanguage: opts.targetLanguage, domains: opts.domains, terms: opts.terms },
+    attemptTag: opts.attemptTag, timeoutMs: opts.timeoutMs,
+  });
 }
 
 export async function markReceiptsCompleted(ids: number[]): Promise<void> {

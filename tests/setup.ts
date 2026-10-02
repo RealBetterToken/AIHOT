@@ -10,6 +10,8 @@ if (!/_(test|ci)$/.test(database)) {
   throw new Error(`Invariant tests write rows: point DATABASE_URL at a throwaway database named *_test or *_ci (got "${database}")`);
 }
 process.env.AIHOT_CREDENTIALS_DIR = "/nonexistent-test-credentials";
+process.env.MODEL_CONFIG_FILE = "/nonexistent-test-models";
+process.env.TRANSLATION_REVIEW_ENABLED = "false";
 process.env.SESSION_SECRET ??= "test-session-secret-0123456789";
 process.env.IMG_PROXY_SIGN_SECRET ??= "test-img-secret-0123456789";
 process.env.FEISHU_CONTENT_PUSH_ENABLED = "false";

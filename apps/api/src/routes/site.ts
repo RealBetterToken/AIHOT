@@ -13,7 +13,7 @@ import { loadDevelopments, loadGroupReports } from "@aihot/backend/publication/g
 import { loadTopicTags } from "@aihot/backend/publication/topics";
 import { loadChangelog, siteMeta } from "@aihot/backend/site/meta";
 import { loadContact, loadMakerAvatar } from "@aihot/backend/site/contact";
-import { loadSiteStats } from "@aihot/backend/site/stats";
+import { loadSiteStats } from "@aihot/backend/publication/stats";
 import { itemAvailability } from "@aihot/backend/publication/availability";
 import { listTopicSummaries, loadTopicPage, topicGroups } from "@aihot/backend/publication/topics";
 import { registerFeedback } from "./feedback.ts";
@@ -163,7 +163,7 @@ export function registerSite(app: FastifyInstance) {
   }));
 
   app.get("/api/site/stats", siteHandler(async (req, reply) => {
-    return sendJsonWithEtag(req, reply, await loadSiteStats(), { etagPrefix: "stats", cacheControl: "public, max-age=300, s-maxage=300" });
+    return sendJsonWithEtag(req, reply, await loadSiteStats(localeParam(looseQuery(req).lang)), { etagPrefix: "stats", cacheControl: "public, max-age=300, s-maxage=300" });
   }));
 
   app.get("/api/site/changelog", siteHandler(async (req, reply) => {
